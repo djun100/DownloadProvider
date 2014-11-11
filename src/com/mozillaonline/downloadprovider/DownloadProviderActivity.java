@@ -19,6 +19,9 @@ import com.mozillaonline.providers.downloads.DownloadService;
 import com.mozillaonline.providers.downloads.ui.ActivityDownloadList;
 import com.mozillaonline.providers.downloads.ui.DownloadList;
 
+/**
+ * @author wangxc <br/>
+ */
 public class DownloadProviderActivity extends Activity implements OnClickListener {
     @SuppressWarnings("unused")
     private static final String TAG = DownloadProviderActivity.class.getName();
@@ -38,7 +41,7 @@ public class DownloadProviderActivity extends Activity implements OnClickListene
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
+        setContentView(R.layout.download_main);
 
         mDownloadManager = new DownloadManager(getContentResolver(), getPackageName());
         buildComponents();

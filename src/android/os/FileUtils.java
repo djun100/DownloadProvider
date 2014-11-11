@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.mozillaonline.android.os;
+package android.os;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;

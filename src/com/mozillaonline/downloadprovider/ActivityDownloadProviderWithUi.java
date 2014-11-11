@@ -87,7 +87,7 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.dialog_down);
+        setContentView(R.layout.download_dialog);
 
         mDownloadManager = new DownloadManager(getContentResolver(), getPackageName());
         buildComponents();
@@ -128,8 +128,8 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
         
         DownloadService.setListener(this);
         
-        if(!hasDownloadRecord(mSizeSortedCursor,URL3)){
-            startDownload(URL3);
+        if(!hasDownloadRecord(mSizeSortedCursor,URL)){
+            startDownload(URL);
            }
     }
 
