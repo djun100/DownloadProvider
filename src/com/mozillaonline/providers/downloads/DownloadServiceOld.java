@@ -42,7 +42,7 @@ import android.util.Log;
  * Performs the background downloads requested by applications that use the
  * Downloads provider.
  */
-public class DownloadService extends Service {
+public class DownloadServiceOld extends Service {
     /** Observer to get notified when the content observer's data changes */
     private DownloadManagerContentObserver mObserver;
 
@@ -71,8 +71,7 @@ public class DownloadService extends Service {
     private boolean mPendingUpdate;
 
     SystemFacade mSystemFacade;
-    
-    private static OnUiUpdateListener mOnUiUpdateListener;
+
     /**
      * Receives notifications when the data in the content provider changes
      */
@@ -92,10 +91,6 @@ public class DownloadService extends Service {
             }
             updateFromProvider();
             
-            if(mOnUiUpdateListener!=null){
-                mOnUiUpdateListener.onUiUpdate();                
-            }
-
         }
 
     }
@@ -182,7 +177,7 @@ public class DownloadService extends Service {
             // supposed to get restarted soonest in the future
             long wakeUp = Long.MAX_VALUE;
             for (;;) {
-                synchronized (DownloadService.this) {
+                synchronized (DownloadServiceOld.this) {
                     if (mUpdateThread != this) {
                         throw new IllegalStateException("multiple UpdateThreads in DownloadService");
                     }
@@ -276,7 +271,7 @@ public class DownloadService extends Service {
             Intent intent = new Intent(Constants.ACTION_RETRY);
             intent.setClassName(getPackageName(), DownloadReceiver.class.getName());
             alarms.set(AlarmManager.RTC_WAKEUP, mSystemFacade.currentTimeMillis() + wakeUp,
-                    PendingIntent.getBroadcast(DownloadService.this, 0, intent, PendingIntent.FLAG_ONE_SHOT));
+                    PendingIntent.getBroadcast(DownloadServiceOld.this, 0, intent, PendingIntent.FLAG_ONE_SHOT));
         }
     }
 
@@ -398,11 +393,5 @@ public class DownloadService extends Service {
         }
         mSystemFacade.cancelNotification(info.mId);
         mDownloads.remove(info.mId);
-    }
-    public static interface OnUiUpdateListener {
-        void onUiUpdate();
-   }
-    public static void setListener(OnUiUpdateListener onUiUpdateListener){
-        mOnUiUpdateListener=onUiUpdateListener;
     }
 }

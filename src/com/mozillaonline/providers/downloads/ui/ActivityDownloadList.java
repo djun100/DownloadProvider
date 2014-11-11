@@ -58,9 +58,9 @@ import com.mozillaonline.providers.downloads.ui.DownloadItemLayout.DownloadSelec
 /**
  * View showing a list of all downloads the Download Manager knows about.
  */
-public class DownloadList extends Activity implements OnChildClickListener, OnItemClickListener,
+public class ActivityDownloadList extends Activity implements OnChildClickListener, OnItemClickListener,
         DownloadSelectListener, OnClickListener, OnCancelListener {
-    private static final String LOG_TAG = "DownloadList";
+    private static final String LOG_TAG = "ActivityDownloadList";
     //ui declare
     private ExpandableListView mDateOrderedListView;
     private ListView mSizeOrderedListView;
@@ -81,8 +81,9 @@ public class DownloadList extends Activity implements OnChildClickListener, OnIt
     private int mLocalUriColumnId;
     private int mMediaTypeColumnId;
     private int mReasonColumndId;
+    private int mUriColumnId;
 
-    private boolean mIsSortedBySize = false;
+    private boolean mIsSortedBySize = true;
     private Set<Long> mSelectedIds = new HashSet<Long>();
 
     /**
@@ -117,7 +118,8 @@ public class DownloadList extends Activity implements OnChildClickListener, OnIt
             mLocalUriColumnId = mDateSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI);
             mMediaTypeColumnId = mDateSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_MEDIA_TYPE);
             mReasonColumndId = mDateSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON);
-
+            mUriColumnId=mDateSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_URI);
+            
             mDateSortedAdapter = new DateSortedDownloadAdapter(this, mDateSortedCursor, this);
             mDateOrderedListView.setAdapter(mDateSortedAdapter);
             mSizeSortedAdapter = new DownloadAdapter(this, mSizeSortedCursor, this);
@@ -127,6 +129,7 @@ public class DownloadList extends Activity implements OnChildClickListener, OnIt
         }
 
         chooseListToShow();
+        checkUri(mSizeSortedCursor);
     }
 
     /**
@@ -149,8 +152,8 @@ public class DownloadList extends Activity implements OnChildClickListener, OnIt
     }
 
     private void setupViews() {
-        setContentView(R.layout.download_list);
-        setTitle(getText(R.string.download_title));
+        setContentView(R.layout.activity_download_list);
+//        setTitle(getText(R.string.download_title));
 
         mDateOrderedListView = (ExpandableListView) findViewById(R.id.date_ordered_list);
         mDateOrderedListView.setOnChildClickListener(this);
@@ -172,10 +175,13 @@ public class DownloadList extends Activity implements OnChildClickListener, OnIt
     @Override
     protected void onResume() {
         super.onResume();
+        Log.e(LOG_TAG, "onResume()");
         if (haveCursors()) {
-            mDateSortedCursor.registerContentObserver(mContentObserver);
-            mDateSortedCursor.registerDataSetObserver(mDataSetObserver);
-            refresh();
+            mSizeSortedCursor.registerContentObserver(mContentObserver);
+            mSizeSortedCursor.registerDataSetObserver(mDataSetObserver);
+//            mDateSortedCursor.registerContentObserver(mContentObserver);
+//            mDateSortedCursor.registerDataSetObserver(mDataSetObserver);
+//            refresh();
         }
     }
 
@@ -183,8 +189,10 @@ public class DownloadList extends Activity implements OnChildClickListener, OnIt
     protected void onPause() {
         super.onPause();
         if (haveCursors()) {
-            mDateSortedCursor.unregisterContentObserver(mContentObserver);
-            mDateSortedCursor.unregisterDataSetObserver(mDataSetObserver);
+            mSizeSortedCursor.unregisterContentObserver(mContentObserver);
+            mSizeSortedCursor.unregisterDataSetObserver(mDataSetObserver);
+//            mDateSortedCursor.unregisterContentObserver(mContentObserver);
+//            mDateSortedCursor.unregisterDataSetObserver(mDataSetObserver);
         }
     }
 
@@ -623,7 +631,7 @@ public class DownloadList extends Activity implements OnChildClickListener, OnIt
 
     /**
      * Move {@link #mDateSortedCursor} to the download with the given ID.
-     * 
+     * mDateSortedCursor游标移动到指定downloadId处
      * @return true if the specified download ID was found; false otherwise
      */
     private boolean moveToDownload(long downloadId) {
@@ -642,6 +650,14 @@ public class DownloadList extends Activity implements OnChildClickListener, OnIt
     public void onCancel(DialogInterface dialog) {
         mQueuedDownloadId = null;
         mQueuedDialog = null;
+    }
+    
+    public void checkUri(Cursor cursor){
+        for(cursor.moveToFirst();!cursor.isAfterLast();cursor.moveToNext()){
+            Log.e(LOG_TAG,"mUriColumnId:"+ cursor.getString(mUriColumnId)
+                    +"\n"+"mLocalUriColumnId:"+cursor.getString(mLocalUriColumnId)
+                    +"\n"+"mIdColumnId:"+cursor.getString(mIdColumnId));
+        }
     }
     
     private class MyContentObserver extends ContentObserver {

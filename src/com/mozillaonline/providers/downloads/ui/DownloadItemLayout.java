@@ -30,7 +30,7 @@ import com.mozillaonline.downloadprovider.R;
  * also keeps an ID associated with the currently displayed download and notifies a listener upon
  * selection changes with that ID.
  */
-public class DownloadItem extends RelativeLayout {
+public class DownloadItemLayout extends RelativeLayout {
     private static float CHECKMARK_AREA = -1;
 
     private boolean mIsInDownEvent = false;
@@ -43,17 +43,17 @@ public class DownloadItem extends RelativeLayout {
         public boolean isDownloadSelected(long id);
     }
 
-    public DownloadItem(Context context, AttributeSet attrs, int defStyle) {
+    public DownloadItemLayout(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         initialize();
     }
 
-    public DownloadItem(Context context, AttributeSet attrs) {
+    public DownloadItemLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
         initialize();
     }
 
-    public DownloadItem(Context context) {
+    public DownloadItemLayout(Context context) {
         super(context);
         initialize();
     }

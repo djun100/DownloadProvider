@@ -146,6 +146,7 @@ public class DownloadManager {
 
     /**
      * Value of {@link #COLUMN_STATUS} when the download is waiting to start.
+     * 链接有效性未确定的状态，不知道链接是否可以下载
      */
     public final static int STATUS_PENDING = 1 << 0;
 
@@ -279,25 +280,20 @@ public class DownloadManager {
     public static final String EXTRA_DOWNLOAD_ID = "extra_download_id";
 
     // this array must contain all public columns
-    private static final String[] COLUMNS = new String[] { COLUMN_ID,
-	    COLUMN_TITLE, COLUMN_DESCRIPTION, COLUMN_URI, COLUMN_MEDIA_TYPE,
-	    COLUMN_TOTAL_SIZE_BYTES, COLUMN_LOCAL_URI, COLUMN_STATUS,
-	    COLUMN_REASON, COLUMN_BYTES_DOWNLOADED_SO_FAR,
-	    COLUMN_LAST_MODIFIED_TIMESTAMP };
+    private static final String[] COLUMNS = new String[] { COLUMN_ID, COLUMN_TITLE, COLUMN_DESCRIPTION, COLUMN_URI,
+            COLUMN_MEDIA_TYPE, COLUMN_TOTAL_SIZE_BYTES, COLUMN_LOCAL_URI, COLUMN_STATUS, COLUMN_REASON,
+            COLUMN_BYTES_DOWNLOADED_SO_FAR, COLUMN_LAST_MODIFIED_TIMESTAMP };
 
     // columns to request from DownloadProvider
-    private static final String[] UNDERLYING_COLUMNS = new String[] {
-	    Downloads._ID, Downloads.COLUMN_TITLE,
-	    Downloads.COLUMN_DESCRIPTION, Downloads.COLUMN_URI,
-	    Downloads.COLUMN_MIME_TYPE, Downloads.COLUMN_TOTAL_BYTES,
-	    Downloads.COLUMN_STATUS, Downloads.COLUMN_CURRENT_BYTES,
-	    Downloads.COLUMN_LAST_MODIFICATION, Downloads.COLUMN_DESTINATION,
-	    Downloads.COLUMN_FILE_NAME_HINT, Downloads._DATA, };
+    private static final String[] UNDERLYING_COLUMNS = new String[] { Downloads._ID, Downloads.COLUMN_TITLE,
+            Downloads.COLUMN_DESCRIPTION, Downloads.COLUMN_URI, Downloads.COLUMN_MIME_TYPE,
+            Downloads.COLUMN_TOTAL_BYTES, Downloads.COLUMN_STATUS, Downloads.COLUMN_CURRENT_BYTES,
+            Downloads.COLUMN_LAST_MODIFICATION, Downloads.COLUMN_DESTINATION, Downloads.COLUMN_FILE_NAME_HINT,
+            Downloads._DATA, };
 
-    private static final Set<String> LONG_COLUMNS = new HashSet<String>(
-	    Arrays.asList(COLUMN_ID, COLUMN_TOTAL_SIZE_BYTES, COLUMN_STATUS,
-		    COLUMN_REASON, COLUMN_BYTES_DOWNLOADED_SO_FAR,
-		    COLUMN_LAST_MODIFIED_TIMESTAMP));
+    private static final Set<String> LONG_COLUMNS = new HashSet<String>(Arrays.asList(COLUMN_ID,
+            COLUMN_TOTAL_SIZE_BYTES, COLUMN_STATUS, COLUMN_REASON, COLUMN_BYTES_DOWNLOADED_SO_FAR,
+            COLUMN_LAST_MODIFIED_TIMESTAMP));
 
     /**
      * This class contains all the information necessary to request a new
@@ -309,470 +305,447 @@ public class DownloadManager {
      * {@link #setDestinationUri(Uri)}.
      */
     public static class Request {
-	/**
-	 * Bit flag for {@link #setAllowedNetworkTypes} corresponding to
-	 * {@link ConnectivityManager#TYPE_MOBILE}.
-	 */
-	public static final int NETWORK_MOBILE = 1 << 0;
+        /**
+         * Bit flag for {@link #setAllowedNetworkTypes} corresponding to
+         * {@link ConnectivityManager#TYPE_MOBILE}.
+         */
+        public static final int NETWORK_MOBILE = 1 << 0;
 
-	/**
-	 * Bit flag for {@link #setAllowedNetworkTypes} corresponding to
-	 * {@link ConnectivityManager#TYPE_WIFI}.
-	 */
-	public static final int NETWORK_WIFI = 1 << 1;
+        /**
+         * Bit flag for {@link #setAllowedNetworkTypes} corresponding to
+         * {@link ConnectivityManager#TYPE_WIFI}.
+         */
+        public static final int NETWORK_WIFI = 1 << 1;
 
-	private Uri mUri;
-	private Uri mDestinationUri;
-	private List<Pair<String, String>> mRequestHeaders = new ArrayList<Pair<String, String>>();
-	private CharSequence mTitle;
-	private CharSequence mDescription;
-	private boolean mShowNotification = true;
-	private String mMimeType;
-	private boolean mRoamingAllowed = true;
-	private int mAllowedNetworkTypes = ~0; // default to all network types
-					       // allowed
-	private boolean mIsVisibleInDownloadsUi = true;
+        private Uri mUri;
+        private Uri mDestinationUri;
+        private List<Pair<String, String>> mRequestHeaders = new ArrayList<Pair<String, String>>();
+        private CharSequence mTitle;
+        private CharSequence mDescription;
+        private boolean mShowNotification = true;
+        private String mMimeType;
+        private boolean mRoamingAllowed = true;
+        private int mAllowedNetworkTypes = ~0; // default to all network types
+        // allowed
+        private boolean mIsVisibleInDownloadsUi = true;
 
-	/**
-	 * @param uri
-	 *            the HTTP URI to download.
-	 */
-	public Request(Uri uri) {
-	    if (uri == null) {
-		throw new NullPointerException();
-	    }
-	    String scheme = uri.getScheme();
-	    if (scheme == null || !scheme.equals("http")) {
-		throw new IllegalArgumentException(
-			"Can only download HTTP URIs: " + uri);
-	    }
-	    mUri = uri;
-	}
+        /**
+         * @param uri
+         *            the HTTP URI to download.
+         */
+        public Request(Uri uri) {
+            if (uri == null) {
+                throw new NullPointerException();
+            }
+            String scheme = uri.getScheme();
+            if (scheme == null || !scheme.equals("http")) {
+                throw new IllegalArgumentException("Can only download HTTP URIs: " + uri);
+            }
+            mUri = uri;
+        }
 
-	/**
-	 * Set the local destination for the downloaded file. Must be a file URI
-	 * to a path on external storage, and the calling application must have
-	 * the WRITE_EXTERNAL_STORAGE permission.
-	 * 
-	 * If the URI is a directory(ending with "/"), destination filename will
-	 * be generated.
-	 * 
-	 * @return this object
-	 */
-	public Request setDestinationUri(Uri uri) {
-	    mDestinationUri = uri;
-	    return this;
-	}
+        /**
+         * Set the local destination for the downloaded file. Must be a file URI
+         * to a path on external storage, and the calling application must have
+         * the WRITE_EXTERNAL_STORAGE permission.
+         * 
+         * If the URI is a directory(ending with "/"), destination filename will
+         * be generated.
+         * 
+         * @return this object
+         */
+        public Request setDestinationUri(Uri uri) {
+            mDestinationUri = uri;
+            return this;
+        }
 
-	/**
-	 * Set the local destination for the downloaded file to a path within
-	 * the application's external files directory (as returned by
-	 * {@link Context#getExternalFilesDir(String)}.
-	 * 
-	 * @param context
-	 *            the {@link Context} to use in determining the external
-	 *            files directory
-	 * @param dirType
-	 *            the directory type to pass to
-	 *            {@link Context#getExternalFilesDir(String)}
-	 * @param subPath
-	 *            the path within the external directory. If subPath is a
-	 *            directory(ending with "/"), destination filename will be
-	 *            generated.
-	 * @return this object
-	 */
-	public Request setDestinationInExternalFilesDir(Context context,
-		String dirType, String subPath) {
-	    setDestinationFromBase(context.getExternalFilesDir(dirType),
-		    subPath);
-	    return this;
-	}
+        /**
+         * Set the local destination for the downloaded file to a path within
+         * the application's external files directory (as returned by
+         * {@link Context#getExternalFilesDir(String)}.
+         * 
+         * @param context
+         *            the {@link Context} to use in determining the external
+         *            files directory
+         * @param dirType
+         *            the directory type to pass to
+         *            {@link Context#getExternalFilesDir(String)}
+         * @param subPath
+         *            the path within the external directory. If subPath is a
+         *            directory(ending with "/"), destination filename will be
+         *            generated.
+         * @return this object
+         */
+        public Request setDestinationInExternalFilesDir(Context context, String dirType, String subPath) {
+            setDestinationFromBase(context.getExternalFilesDir(dirType), subPath);
+            return this;
+        }
 
-	/**
-	 * Set the local destination for the downloaded file to a path within
-	 * the public external storage directory (as returned by
-	 * {@link Environment#getExternalStoragePublicDirectory(String)}.
-	 * 
-	 * @param dirType
-	 *            the directory type to pass to
-	 *            {@link Environment#getExternalStoragePublicDirectory(String)}
-	 * @param subPath
-	 *            the path within the external directory. If subPath is a
-	 *            directory(ending with "/"), destination filename will be
-	 *            generated.
-	 * @return this object
-	 */
-	public Request setDestinationInExternalPublicDir(String dirType,
-		String subPath) {
-	    setDestinationFromBase(
-		    Environment.getExternalStoragePublicDirectory(dirType),
-		    subPath);
-	    return this;
-	}
+        /**
+         * Set the local destination for the downloaded file to a path within
+         * the public external storage directory (as returned by
+         * {@link Environment#getExternalStoragePublicDirectory(String)}.
+         * 
+         * @param dirType
+         *            the directory type to pass to
+         *            {@link Environment#getExternalStoragePublicDirectory(String)}
+         * @param subPath
+         *            the path within the external directory. If subPath is a
+         *            directory(ending with "/"), destination filename will be
+         *            generated.
+         * @return this object
+         */
+        public Request setDestinationInExternalPublicDir(String dirType, String subPath) {
+            setDestinationFromBase(Environment.getExternalStoragePublicDirectory(dirType), subPath);
+            return this;
+        }
 
-	private void setDestinationFromBase(File base, String subPath) {
-	    if (subPath == null) {
-		throw new NullPointerException("subPath cannot be null");
-	    }
-	    mDestinationUri = Uri.withAppendedPath(Uri.fromFile(base), subPath);
-	}
+        private void setDestinationFromBase(File base, String subPath) {
+            if (subPath == null) {
+                throw new NullPointerException("subPath cannot be null");
+            }
+            mDestinationUri = Uri.withAppendedPath(Uri.fromFile(base), subPath);
+        }
 
-	/**
-	 * Add an HTTP header to be included with the download request. The
-	 * header will be added to the end of the list.
-	 * 
-	 * @param header
-	 *            HTTP header name
-	 * @param value
-	 *            header value
-	 * @return this object
-	 * @see <a
-	 *      href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">HTTP/1.1
-	 *      Message Headers</a>
-	 */
-	public Request addRequestHeader(String header, String value) {
-	    if (header == null) {
-		throw new NullPointerException("header cannot be null");
-	    }
-	    if (header.contains(":")) {
-		throw new IllegalArgumentException("header may not contain ':'");
-	    }
-	    if (value == null) {
-		value = "";
-	    }
-	    mRequestHeaders.add(Pair.create(header, value));
-	    return this;
-	}
+        /**
+         * Add an HTTP header to be included with the download request. The
+         * header will be added to the end of the list.
+         * 
+         * @param header
+         *            HTTP header name
+         * @param value
+         *            header value
+         * @return this object
+         * @see <a
+         *      href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2">HTTP/1.1
+         *      Message Headers</a>
+         */
+        public Request addRequestHeader(String header, String value) {
+            if (header == null) {
+                throw new NullPointerException("header cannot be null");
+            }
+            if (header.contains(":")) {
+                throw new IllegalArgumentException("header may not contain ':'");
+            }
+            if (value == null) {
+                value = "";
+            }
+            mRequestHeaders.add(Pair.create(header, value));
+            return this;
+        }
 
-	/**
-	 * Set the title of this download, to be displayed in notifications (if
-	 * enabled). If no title is given, a default one will be assigned based
-	 * on the download filename, once the download starts.
-	 * 
-	 * @return this object
-	 */
-	public Request setTitle(CharSequence title) {
-	    mTitle = title;
-	    return this;
-	}
+        /**
+         * Set the title of this download, to be displayed in notifications (if
+         * enabled). If no title is given, a default one will be assigned based
+         * on the download filename, once the download starts.
+         * 
+         * @return this object
+         */
+        public Request setTitle(CharSequence title) {
+            mTitle = title;
+            return this;
+        }
 
-	/**
-	 * Set a description of this download, to be displayed in notifications
-	 * (if enabled)
-	 * 
-	 * @return this object
-	 */
-	public Request setDescription(CharSequence description) {
-	    mDescription = description;
-	    return this;
-	}
+        /**
+         * Set a description of this download, to be displayed in notifications
+         * (if enabled)
+         * 
+         * @return this object
+         */
+        public Request setDescription(CharSequence description) {
+            mDescription = description;
+            return this;
+        }
 
-	/**
-	 * Set the MIME content type of this download. This will override the
-	 * content type declared in the server's response.
-	 * 
-	 * @see <a
-	 *      href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.7">HTTP/1.1
-	 *      Media Types</a>
-	 * @return this object
-	 */
-	public Request setMimeType(String mimeType) {
-	    mMimeType = mimeType;
-	    return this;
-	}
+        /**
+         * Set the MIME content type of this download. This will override the
+         * content type declared in the server's response.
+         * 
+         * @see <a
+         *      href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.7">HTTP/1.1
+         *      Media Types</a>
+         * @return this object
+         */
+        public Request setMimeType(String mimeType) {
+            mMimeType = mimeType;
+            return this;
+        }
 
-	/**
-	 * Control whether a system notification is posted by the download
-	 * manager while this download is running. If enabled, the download
-	 * manager posts notifications about downloads through the system
-	 * {@link com.mozillaonline.providers.NotificationManager}. By default,
-	 * a notification is shown.
-	 * 
-	 * If set to false, this requires the permission
-	 * android.permission.DOWNLOAD_WITHOUT_NOTIFICATION.
-	 * 
-	 * @param show
-	 *            whether the download manager should show a notification
-	 *            for this download.
-	 * @return this object
-	 */
-	public Request setShowRunningNotification(boolean show) {
-	    mShowNotification = show;
-	    return this;
-	}
+        /**
+         * Control whether a system notification is posted by the download
+         * manager while this download is running. If enabled, the download
+         * manager posts notifications about downloads through the system
+         * {@link com.mozillaonline.providers.NotificationManager}. By default,
+         * a notification is shown.
+         * 
+         * If set to false, this requires the permission
+         * android.permission.DOWNLOAD_WITHOUT_NOTIFICATION.
+         * 
+         * @param show
+         *            whether the download manager should show a notification
+         *            for this download.
+         * @return this object
+         */
+        public Request setShowRunningNotification(boolean show) {
+            mShowNotification = show;
+            return this;
+        }
 
-	/**
-	 * Restrict the types of networks over which this download may proceed.
-	 * By default, all network types are allowed.
-	 * 
-	 * @param flags
-	 *            any combination of the NETWORK_* bit flags.
-	 * @return this object
-	 */
-	public Request setAllowedNetworkTypes(int flags) {
-	    mAllowedNetworkTypes = flags;
-	    return this;
-	}
+        /**
+         * Restrict the types of networks over which this download may proceed.
+         * By default, all network types are allowed.
+         * 
+         * @param flags
+         *            any combination of the NETWORK_* bit flags.
+         * @return this object
+         */
+        public Request setAllowedNetworkTypes(int flags) {
+            mAllowedNetworkTypes = flags;
+            return this;
+        }
 
-	/**
-	 * Set whether this download may proceed over a roaming connection. By
-	 * default, roaming is allowed.
-	 * 
-	 * @param allowed
-	 *            whether to allow a roaming connection to be used
-	 * @return this object
-	 */
-	public Request setAllowedOverRoaming(boolean allowed) {
-	    mRoamingAllowed = allowed;
-	    return this;
-	}
+        /**
+         * Set whether this download may proceed over a roaming connection. By
+         * default, roaming is allowed.
+         * 
+         * @param allowed
+         *            whether to allow a roaming connection to be used
+         * @return this object
+         */
+        public Request setAllowedOverRoaming(boolean allowed) {
+            mRoamingAllowed = allowed;
+            return this;
+        }
 
-	/**
-	 * Set whether this download should be displayed in the system's
-	 * Downloads UI. True by default.
-	 * 
-	 * @param isVisible
-	 *            whether to display this download in the Downloads UI
-	 * @return this object
-	 */
-	public Request setVisibleInDownloadsUi(boolean isVisible) {
-	    mIsVisibleInDownloadsUi = isVisible;
-	    return this;
-	}
+        /**
+         * Set whether this download should be displayed in the system's
+         * Downloads UI. True by default.
+         * 
+         * @param isVisible
+         *            whether to display this download in the Downloads UI
+         * @return this object
+         */
+        public Request setVisibleInDownloadsUi(boolean isVisible) {
+            mIsVisibleInDownloadsUi = isVisible;
+            return this;
+        }
 
-	/**
-	 * @return ContentValues to be passed to DownloadProvider.insert()
-	 */
-	ContentValues toContentValues(String packageName) {
-	    ContentValues values = new ContentValues();
-	    assert mUri != null;
-	    values.put(Downloads.COLUMN_URI, mUri.toString());
-	    values.put(Downloads.COLUMN_IS_PUBLIC_API, true);
-	    values.put(Downloads.COLUMN_NOTIFICATION_PACKAGE, packageName);
+        /**
+         * @return ContentValues to be passed to DownloadProvider.insert()
+         */
+        ContentValues toContentValues(String packageName) {
+            ContentValues values = new ContentValues();
+            assert mUri != null;
+            values.put(Downloads.COLUMN_URI, mUri.toString());
+            values.put(Downloads.COLUMN_IS_PUBLIC_API, true);
+            values.put(Downloads.COLUMN_NOTIFICATION_PACKAGE, packageName);
 
-	    if (mDestinationUri != null) {
-		values.put(Downloads.COLUMN_DESTINATION,
-			Downloads.DESTINATION_FILE_URI);
-		values.put(Downloads.COLUMN_FILE_NAME_HINT,
-			mDestinationUri.toString());
-	    } else {
-		values.put(Downloads.COLUMN_DESTINATION,
-			Downloads.DESTINATION_EXTERNAL);
-	    }
+            if (mDestinationUri != null) {
+                values.put(Downloads.COLUMN_DESTINATION, Downloads.DESTINATION_FILE_URI);
+                values.put(Downloads.COLUMN_FILE_NAME_HINT, mDestinationUri.toString());
+            } else {
+                values.put(Downloads.COLUMN_DESTINATION, Downloads.DESTINATION_EXTERNAL);
+            }
 
-	    if (!mRequestHeaders.isEmpty()) {
-		encodeHttpHeaders(values);
-	    }
+            if (!mRequestHeaders.isEmpty()) {
+                encodeHttpHeaders(values);
+            }
 
-	    putIfNonNull(values, Downloads.COLUMN_TITLE, mTitle);
-	    putIfNonNull(values, Downloads.COLUMN_DESCRIPTION, mDescription);
-	    putIfNonNull(values, Downloads.COLUMN_MIME_TYPE, mMimeType);
+            putIfNonNull(values, Downloads.COLUMN_TITLE, mTitle);
+            putIfNonNull(values, Downloads.COLUMN_DESCRIPTION, mDescription);
+            putIfNonNull(values, Downloads.COLUMN_MIME_TYPE, mMimeType);
 
-	    values.put(Downloads.COLUMN_VISIBILITY,
-		    mShowNotification ? Downloads.VISIBILITY_VISIBLE
-			    : Downloads.VISIBILITY_HIDDEN);
+            values.put(Downloads.COLUMN_VISIBILITY, mShowNotification ? Downloads.VISIBILITY_VISIBLE
+                    : Downloads.VISIBILITY_HIDDEN);
 
-	    values.put(Downloads.COLUMN_ALLOWED_NETWORK_TYPES,
-		    mAllowedNetworkTypes);
-	    values.put(Downloads.COLUMN_ALLOW_ROAMING, mRoamingAllowed);
-	    values.put(Downloads.COLUMN_IS_VISIBLE_IN_DOWNLOADS_UI,
-		    mIsVisibleInDownloadsUi);
+            values.put(Downloads.COLUMN_ALLOWED_NETWORK_TYPES, mAllowedNetworkTypes);
+            values.put(Downloads.COLUMN_ALLOW_ROAMING, mRoamingAllowed);
+            values.put(Downloads.COLUMN_IS_VISIBLE_IN_DOWNLOADS_UI, mIsVisibleInDownloadsUi);
 
-	    values.put(Downloads.COLUMN_NO_INTEGRITY, 1);
+            values.put(Downloads.COLUMN_NO_INTEGRITY, 1);
 
-	    return values;
-	}
+            return values;
+        }
 
-	private void encodeHttpHeaders(ContentValues values) {
-	    int index = 0;
-	    for (Pair<String, String> header : mRequestHeaders) {
-		String headerString = header.first + ": " + header.second;
-		values.put(Downloads.RequestHeaders.INSERT_KEY_PREFIX + index,
-			headerString);
-		index++;
-	    }
-	}
+        private void encodeHttpHeaders(ContentValues values) {
+            int index = 0;
+            for (Pair<String, String> header : mRequestHeaders) {
+                String headerString = header.first + ": " + header.second;
+                values.put(Downloads.RequestHeaders.INSERT_KEY_PREFIX + index, headerString);
+                index++;
+            }
+        }
 
-	private void putIfNonNull(ContentValues contentValues, String key,
-		Object value) {
-	    if (value != null) {
-		contentValues.put(key, value.toString());
-	    }
-	}
+        private void putIfNonNull(ContentValues contentValues, String key, Object value) {
+            if (value != null) {
+                contentValues.put(key, value.toString());
+            }
+        }
     }
 
     /**
      * This class may be used to filter download manager queries.
      */
     public static class Query {
-	/**
-	 * Constant for use with {@link #orderBy}
-	 * 
-	 * @hide
-	 */
-	public static final int ORDER_ASCENDING = 1;
+        /**
+         * Constant for use with {@link #orderBy}
+         * 
+         * @hide
+         */
+        public static final int ORDER_ASCENDING = 1;
 
-	/**
-	 * Constant for use with {@link #orderBy}
-	 * 
-	 * @hide
-	 */
-	public static final int ORDER_DESCENDING = 2;
+        /**
+         * Constant for use with {@link #orderBy}
+         * 
+         * @hide
+         */
+        public static final int ORDER_DESCENDING = 2;
 
-	private long[] mIds = null;
-	private Integer mStatusFlags = null;
-	private String mOrderByColumn = Downloads.COLUMN_LAST_MODIFICATION;
-	private int mOrderDirection = ORDER_DESCENDING;
-	private boolean mOnlyIncludeVisibleInDownloadsUi = false;
+        private long[] mIds = null;
+        private Integer mStatusFlags = null;
+        private String mOrderByColumn = Downloads.COLUMN_LAST_MODIFICATION;
+        private int mOrderDirection = ORDER_DESCENDING;
+        private boolean mOnlyIncludeVisibleInDownloadsUi = false;
 
-	/**
-	 * Include only the downloads with the given IDs.
-	 * 
-	 * @return this object
-	 */
-	public Query setFilterById(long... ids) {
-	    mIds = ids;
-	    return this;
-	}
+        /**
+         * Include only the downloads with the given IDs.
+         * 
+         * @return this object
+         */
+        public Query setFilterById(long... ids) {
+            mIds = ids;
+            return this;
+        }
 
-	/**
-	 * Include only downloads with status matching any the given status
-	 * flags.
-	 * 
-	 * @param flags
-	 *            any combination of the STATUS_* bit flags
-	 * @return this object
-	 */
-	public Query setFilterByStatus(int flags) {
-	    mStatusFlags = flags;
-	    return this;
-	}
+        /**
+         * Include only downloads with status matching any the given status
+         * flags.
+         * 
+         * @param flags
+         *            any combination of the STATUS_* bit flags
+         * @return this object
+         */
+        public Query setFilterByStatus(int flags) {
+            mStatusFlags = flags;
+            return this;
+        }
 
-	/**
-	 * Controls whether this query includes downloads not visible in the
-	 * system's Downloads UI.
-	 * 
-	 * @param value
-	 *            if true, this query will only include downloads that
-	 *            should be displayed in the system's Downloads UI; if false
-	 *            (the default), this query will include both visible and
-	 *            invisible downloads.
-	 * @return this object
-	 * @hide
-	 */
-	public Query setOnlyIncludeVisibleInDownloadsUi(boolean value) {
-	    mOnlyIncludeVisibleInDownloadsUi = value;
-	    return this;
-	}
+        /**
+         * Controls whether this query includes downloads not visible in the
+         * system's Downloads UI.
+         * 
+         * @param value
+         *            if true, this query will only include downloads that
+         *            should be displayed in the system's Downloads UI; if false
+         *            (the default), this query will include both visible and
+         *            invisible downloads.
+         * @return this object
+         * @hide
+         */
+        public Query setOnlyIncludeVisibleInDownloadsUi(boolean value) {
+            mOnlyIncludeVisibleInDownloadsUi = value;
+            return this;
+        }
 
-	/**
-	 * Change the sort order of the returned Cursor.
-	 * 
-	 * @param column
-	 *            one of the COLUMN_* constants; currently, only
-	 *            {@link #COLUMN_LAST_MODIFIED_TIMESTAMP} and
-	 *            {@link #COLUMN_TOTAL_SIZE_BYTES} are supported.
-	 * @param direction
-	 *            either {@link #ORDER_ASCENDING} or
-	 *            {@link #ORDER_DESCENDING}
-	 * @return this object
-	 * @hide
-	 */
-	public Query orderBy(String column, int direction) {
-	    if (direction != ORDER_ASCENDING && direction != ORDER_DESCENDING) {
-		throw new IllegalArgumentException("Invalid direction: "
-			+ direction);
-	    }
+        /**
+         * Change the sort order of the returned Cursor.
+         * 
+         * @param column
+         *            one of the COLUMN_* constants; currently, only
+         *            {@link #COLUMN_LAST_MODIFIED_TIMESTAMP} and
+         *            {@link #COLUMN_TOTAL_SIZE_BYTES} are supported.
+         * @param direction
+         *            either {@link #ORDER_ASCENDING} or
+         *            {@link #ORDER_DESCENDING}
+         * @return this object
+         * @hide
+         */
+        public Query orderBy(String column, int direction) {
+            if (direction != ORDER_ASCENDING && direction != ORDER_DESCENDING) {
+                throw new IllegalArgumentException("Invalid direction: " + direction);
+            }
 
-	    if (column.equals(COLUMN_LAST_MODIFIED_TIMESTAMP)) {
-		mOrderByColumn = Downloads.COLUMN_LAST_MODIFICATION;
-	    } else if (column.equals(COLUMN_TOTAL_SIZE_BYTES)) {
-		mOrderByColumn = Downloads.COLUMN_TOTAL_BYTES;
-	    } else {
-		throw new IllegalArgumentException("Cannot order by " + column);
-	    }
-	    mOrderDirection = direction;
-	    return this;
-	}
+            if (column.equals(COLUMN_LAST_MODIFIED_TIMESTAMP)) {
+                mOrderByColumn = Downloads.COLUMN_LAST_MODIFICATION;
+            } else if (column.equals(COLUMN_TOTAL_SIZE_BYTES)) {
+                mOrderByColumn = Downloads.COLUMN_TOTAL_BYTES;
+            } else {
+                throw new IllegalArgumentException("Cannot order by " + column);
+            }
+            mOrderDirection = direction;
+            return this;
+        }
 
-	/**
-	 * Run this query using the given ContentResolver.
-	 * 
-	 * @param projection
-	 *            the projection to pass to ContentResolver.query()
-	 * @return the Cursor returned by ContentResolver.query()
-	 */
-	Cursor runQuery(ContentResolver resolver, String[] projection,
-		Uri baseUri) {
-	    Uri uri = baseUri;
-	    List<String> selectionParts = new ArrayList<String>();
-	    String[] selectionArgs = null;
+        /**
+         * Run this query using the given ContentResolver.
+         * 
+         * @param projection
+         *            the projection to pass to ContentResolver.query()
+         * @return the Cursor returned by ContentResolver.query()
+         */
+        Cursor runQuery(ContentResolver resolver, String[] projection, Uri baseUri) {
+            Uri uri = baseUri;
+            List<String> selectionParts = new ArrayList<String>();
+            String[] selectionArgs = null;
 
-	    if (mIds != null) {
-		selectionParts.add(getWhereClauseForIds(mIds));
-		selectionArgs = getWhereArgsForIds(mIds);
-	    }
+            if (mIds != null) {
+                selectionParts.add(getWhereClauseForIds(mIds));
+                selectionArgs = getWhereArgsForIds(mIds);
+            }
 
-	    if (mStatusFlags != null) {
-		List<String> parts = new ArrayList<String>();
-		if ((mStatusFlags & STATUS_PENDING) != 0) {
-		    parts.add(statusClause("=", Downloads.STATUS_PENDING));
-		}
-		if ((mStatusFlags & STATUS_RUNNING) != 0) {
-		    parts.add(statusClause("=", Downloads.STATUS_RUNNING));
-		}
-		if ((mStatusFlags & STATUS_PAUSED) != 0) {
-		    parts.add(statusClause("=", Downloads.STATUS_PAUSED_BY_APP));
-		    parts.add(statusClause("=",
-			    Downloads.STATUS_WAITING_TO_RETRY));
-		    parts.add(statusClause("=",
-			    Downloads.STATUS_WAITING_FOR_NETWORK));
-		    parts.add(statusClause("=",
-			    Downloads.STATUS_QUEUED_FOR_WIFI));
-		}
-		if ((mStatusFlags & STATUS_SUCCESSFUL) != 0) {
-		    parts.add(statusClause("=", Downloads.STATUS_SUCCESS));
-		}
-		if ((mStatusFlags & STATUS_FAILED) != 0) {
-		    parts.add("(" + statusClause(">=", 400) + " AND "
-			    + statusClause("<", 600) + ")");
-		}
-		selectionParts.add(joinStrings(" OR ", parts));
-	    }
+            if (mStatusFlags != null) {
+                List<String> parts = new ArrayList<String>();
+                if ((mStatusFlags & STATUS_PENDING) != 0) {
+                    parts.add(statusClause("=", Downloads.STATUS_PENDING));
+                }
+                if ((mStatusFlags & STATUS_RUNNING) != 0) {
+                    parts.add(statusClause("=", Downloads.STATUS_RUNNING));
+                }
+                if ((mStatusFlags & STATUS_PAUSED) != 0) {
+                    parts.add(statusClause("=", Downloads.STATUS_PAUSED_BY_APP));
+                    parts.add(statusClause("=", Downloads.STATUS_WAITING_TO_RETRY));
+                    parts.add(statusClause("=", Downloads.STATUS_WAITING_FOR_NETWORK));
+                    parts.add(statusClause("=", Downloads.STATUS_QUEUED_FOR_WIFI));
+                }
+                if ((mStatusFlags & STATUS_SUCCESSFUL) != 0) {
+                    parts.add(statusClause("=", Downloads.STATUS_SUCCESS));
+                }
+                if ((mStatusFlags & STATUS_FAILED) != 0) {
+                    parts.add("(" + statusClause(">=", 400) + " AND " + statusClause("<", 600) + ")");
+                }
+                selectionParts.add(joinStrings(" OR ", parts));
+            }
 
-	    if (mOnlyIncludeVisibleInDownloadsUi) {
-		selectionParts.add(Downloads.COLUMN_IS_VISIBLE_IN_DOWNLOADS_UI
-			+ " != '0'");
-	    }
+            if (mOnlyIncludeVisibleInDownloadsUi) {
+                selectionParts.add(Downloads.COLUMN_IS_VISIBLE_IN_DOWNLOADS_UI + " != '0'");
+            }
 
-	    // only return rows which are not marked 'deleted = 1'
-	    selectionParts.add(Downloads.COLUMN_DELETED + " != '1'");
+            // only return rows which are not marked 'deleted = 1'
+            selectionParts.add(Downloads.COLUMN_DELETED + " != '1'");
 
-	    String selection = joinStrings(" AND ", selectionParts);
-	    String orderDirection = (mOrderDirection == ORDER_ASCENDING ? "ASC"
-		    : "DESC");
-	    String orderBy = mOrderByColumn + " " + orderDirection;
+            String selection = joinStrings(" AND ", selectionParts);
+            String orderDirection = (mOrderDirection == ORDER_ASCENDING ? "ASC" : "DESC");
+            String orderBy = mOrderByColumn + " " + orderDirection;
 
-	    return resolver.query(uri, projection, selection, selectionArgs,
-		    orderBy);
-	}
+            return resolver.query(uri, projection, selection, selectionArgs, orderBy);
+        }
 
-	private String joinStrings(String joiner, Iterable<String> parts) {
-	    StringBuilder builder = new StringBuilder();
-	    boolean first = true;
-	    for (String part : parts) {
-		if (!first) {
-		    builder.append(joiner);
-		}
-		builder.append(part);
-		first = false;
-	    }
-	    return builder.toString();
-	}
+        private String joinStrings(String joiner, Iterable<String> parts) {
+            StringBuilder builder = new StringBuilder();
+            boolean first = true;
+            for (String part : parts) {
+                if (!first) {
+                    builder.append(joiner);
+                }
+                builder.append(part);
+                first = false;
+            }
+            return builder.toString();
+        }
 
-	private String statusClause(String operator, int value) {
-	    return Downloads.COLUMN_STATUS + operator + "'" + value + "'";
-	}
+        private String statusClause(String operator, int value) {
+            return Downloads.COLUMN_STATUS + operator + "'" + value + "'";
+        }
     }
 
     private ContentResolver mResolver;
@@ -783,8 +756,8 @@ public class DownloadManager {
      * @hide
      */
     public DownloadManager(ContentResolver resolver, String packageName) {
-	mResolver = resolver;
-	mPackageName = packageName;
+        mResolver = resolver;
+        mPackageName = packageName;
     }
 
     /**
@@ -795,11 +768,11 @@ public class DownloadManager {
      * @hide
      */
     public void setAccessAllDownloads(boolean accessAllDownloads) {
-	if (accessAllDownloads) {
-	    mBaseUri = Downloads.ALL_DOWNLOADS_CONTENT_URI;
-	} else {
-	    mBaseUri = Downloads.CONTENT_URI;
-	}
+        if (accessAllDownloads) {
+            mBaseUri = Downloads.ALL_DOWNLOADS_CONTENT_URI;
+        } else {
+            mBaseUri = Downloads.CONTENT_URI;
+        }
     }
 
     /**
@@ -812,10 +785,10 @@ public class DownloadManager {
      *         to make future calls related to this download.
      */
     public long enqueue(Request request) {
-	ContentValues values = request.toContentValues(mPackageName);
-	Uri downloadUri = mResolver.insert(Downloads.CONTENT_URI, values);
-	long id = Long.parseLong(downloadUri.getLastPathSegment());
-	return id;
+        ContentValues values = request.toContentValues(mPackageName);
+        Uri downloadUri = mResolver.insert(Downloads.CONTENT_URI, values);
+        long id = Long.parseLong(downloadUri.getLastPathSegment());
+        return id;
     }
 
     /**
@@ -830,15 +803,13 @@ public class DownloadManager {
      * @hide
      */
     public int markRowDeleted(long... ids) {
-	if (ids == null || ids.length == 0) {
-	    // called with nothing to remove!
-	    throw new IllegalArgumentException(
-		    "input param 'ids' can't be null");
-	}
-	ContentValues values = new ContentValues();
-	values.put(Downloads.COLUMN_DELETED, 1);
-	return mResolver.update(mBaseUri, values, getWhereClauseForIds(ids),
-		getWhereArgsForIds(ids));
+        if (ids == null || ids.length == 0) {
+            // called with nothing to remove!
+            throw new IllegalArgumentException("input param 'ids' can't be null");
+        }
+        ContentValues values = new ContentValues();
+        values.put(Downloads.COLUMN_DELETED, 1);
+        return mResolver.update(mBaseUri, values, getWhereClauseForIds(ids), getWhereArgsForIds(ids));
     }
 
     /**
@@ -852,13 +823,11 @@ public class DownloadManager {
      * @return the number of downloads actually removed
      */
     public int remove(long... ids) {
-	if (ids == null || ids.length == 0) {
-	    // called with nothing to remove!
-	    throw new IllegalArgumentException(
-		    "input param 'ids' can't be null");
-	}
-	return mResolver.delete(mBaseUri, getWhereClauseForIds(ids),
-		getWhereArgsForIds(ids));
+        if (ids == null || ids.length == 0) {
+            // called with nothing to remove!
+            throw new IllegalArgumentException("input param 'ids' can't be null");
+        }
+        return mResolver.delete(mBaseUri, getWhereClauseForIds(ids), getWhereArgsForIds(ids));
     }
 
     /**
@@ -870,12 +839,11 @@ public class DownloadManager {
      *         consisting of all the COLUMN_* constants.
      */
     public Cursor query(Query query) {
-	Cursor underlyingCursor = query.runQuery(mResolver, UNDERLYING_COLUMNS,
-		mBaseUri);
-	if (underlyingCursor == null) {
-	    return null;
-	}
-	return new CursorTranslator(underlyingCursor, mBaseUri);
+        Cursor underlyingCursor = query.runQuery(mResolver, UNDERLYING_COLUMNS, mBaseUri);
+        if (underlyingCursor == null) {
+            return null;
+        }
+        return new CursorTranslator(underlyingCursor, mBaseUri);
     }
 
     /**
@@ -887,9 +855,8 @@ public class DownloadManager {
      * @throws FileNotFoundException
      *             if the destination file does not already exist
      */
-    public ParcelFileDescriptor openDownloadedFile(long id)
-	    throws FileNotFoundException {
-	return mResolver.openFileDescriptor(getDownloadUri(id), "r");
+    public ParcelFileDescriptor openDownloadedFile(long id) throws FileNotFoundException {
+        return mResolver.openFileDescriptor(getDownloadUri(id), "r");
     }
 
     /**
@@ -901,28 +868,23 @@ public class DownloadManager {
      * @hide
      */
     public void pauseDownload(long... ids) {
-	Cursor cursor = query(new Query().setFilterById(ids));
-	try {
-	    for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor
-		    .moveToNext()) {
-		int status = cursor
-			.getInt(cursor.getColumnIndex(COLUMN_STATUS));
-		if (status != STATUS_RUNNING && status != STATUS_PENDING) {
-		    throw new IllegalArgumentException(
-			    "Can only pause a running download: "
-				    + cursor.getLong(cursor
-					    .getColumnIndex(COLUMN_ID)));
-		}
-	    }
-	} finally {
-	    cursor.close();
-	}
+        Cursor cursor = query(new Query().setFilterById(ids));
+        try {
+            for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
+                int status = cursor.getInt(cursor.getColumnIndex(COLUMN_STATUS));
+                if (status != STATUS_RUNNING && status != STATUS_PENDING) {
+                    throw new IllegalArgumentException("Can only pause a running download: "
+                            + cursor.getLong(cursor.getColumnIndex(COLUMN_ID)));
+                }
+            }
+        } finally {
+            cursor.close();
+        }
 
-	ContentValues values = new ContentValues();
-	values.put(Downloads.COLUMN_CONTROL, Downloads.CONTROL_PAUSED);
-	values.put(Downloads.COLUMN_NO_INTEGRITY, 1);
-	mResolver.update(mBaseUri, values, getWhereClauseForIds(ids),
-		getWhereArgsForIds(ids));
+        ContentValues values = new ContentValues();
+        values.put(Downloads.COLUMN_CONTROL, Downloads.CONTROL_PAUSED);
+        values.put(Downloads.COLUMN_NO_INTEGRITY, 1);
+        mResolver.update(mBaseUri, values, getWhereClauseForIds(ids), getWhereArgsForIds(ids));
     }
 
     /**
@@ -934,28 +896,23 @@ public class DownloadManager {
      * @hide
      */
     public void resumeDownload(long... ids) {
-	Cursor cursor = query(new Query().setFilterById(ids));
-	try {
-	    for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor
-		    .moveToNext()) {
-		int status = cursor
-			.getInt(cursor.getColumnIndex(COLUMN_STATUS));
-		if (status != STATUS_PAUSED) {
-		    throw new IllegalArgumentException(
-			    "Cann only resume a paused download: "
-				    + cursor.getLong(cursor
-					    .getColumnIndex(COLUMN_ID)));
-		}
-	    }
-	} finally {
-	    cursor.close();
-	}
+        Cursor cursor = query(new Query().setFilterById(ids));
+        try {
+            for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
+                int status = cursor.getInt(cursor.getColumnIndex(COLUMN_STATUS));
+                if (status != STATUS_PAUSED) {
+                    throw new IllegalArgumentException("Cann only resume a paused download: "
+                            + cursor.getLong(cursor.getColumnIndex(COLUMN_ID)));
+                }
+            }
+        } finally {
+            cursor.close();
+        }
 
-	ContentValues values = new ContentValues();
-	values.put(Downloads.COLUMN_STATUS, Downloads.STATUS_PENDING);
-	values.put(Downloads.COLUMN_CONTROL, Downloads.CONTROL_RUN);
-	mResolver.update(mBaseUri, values, getWhereClauseForIds(ids),
-		getWhereArgsForIds(ids));
+        ContentValues values = new ContentValues();
+        values.put(Downloads.COLUMN_STATUS, Downloads.STATUS_PENDING);
+        values.put(Downloads.COLUMN_CONTROL, Downloads.CONTROL_RUN);
+        mResolver.update(mBaseUri, values, getWhereClauseForIds(ids), getWhereArgsForIds(ids));
     }
 
     /**
@@ -968,54 +925,49 @@ public class DownloadManager {
      * @hide
      */
     public void restartDownload(long... ids) {
-	Cursor cursor = query(new Query().setFilterById(ids));
-	try {
-	    for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor
-		    .moveToNext()) {
-		int status = cursor
-			.getInt(cursor.getColumnIndex(COLUMN_STATUS));
-		if (status != STATUS_SUCCESSFUL && status != STATUS_FAILED) {
-		    throw new IllegalArgumentException(
-			    "Cannot restart incomplete download: "
-				    + cursor.getLong(cursor
-					    .getColumnIndex(COLUMN_ID)));
-		}
-	    }
-	} finally {
-	    cursor.close();
-	}
+        Cursor cursor = query(new Query().setFilterById(ids));
+        try {
+            for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
+                int status = cursor.getInt(cursor.getColumnIndex(COLUMN_STATUS));
+                if (status != STATUS_SUCCESSFUL && status != STATUS_FAILED) {
+                    throw new IllegalArgumentException("Cannot restart incomplete download: "
+                            + cursor.getLong(cursor.getColumnIndex(COLUMN_ID)));
+                }
+            }
+        } finally {
+            cursor.close();
+        }
 
-	ContentValues values = new ContentValues();
-	values.put(Downloads.COLUMN_CURRENT_BYTES, 0);
-	values.put(Downloads.COLUMN_TOTAL_BYTES, -1);
-	values.putNull(Downloads._DATA);
-	values.put(Downloads.COLUMN_STATUS, Downloads.STATUS_PENDING);
-	mResolver.update(mBaseUri, values, getWhereClauseForIds(ids),
-		getWhereArgsForIds(ids));
+        ContentValues values = new ContentValues();
+        values.put(Downloads.COLUMN_CURRENT_BYTES, 0);
+        values.put(Downloads.COLUMN_TOTAL_BYTES, -1);
+        values.putNull(Downloads._DATA);
+        values.put(Downloads.COLUMN_STATUS, Downloads.STATUS_PENDING);
+        mResolver.update(mBaseUri, values, getWhereClauseForIds(ids), getWhereArgsForIds(ids));
     }
 
     /**
      * Get the DownloadProvider URI for the download with the given ID.
      */
     Uri getDownloadUri(long id) {
-	return ContentUris.withAppendedId(mBaseUri, id);
+        return ContentUris.withAppendedId(mBaseUri, id);
     }
 
     /**
      * Get a parameterized SQL WHERE clause to select a bunch of IDs.
      */
     static String getWhereClauseForIds(long[] ids) {
-	StringBuilder whereClause = new StringBuilder();
-	whereClause.append("(");
-	for (int i = 0; i < ids.length; i++) {
-	    if (i > 0) {
-		whereClause.append("OR ");
-	    }
-	    whereClause.append(Downloads._ID);
-	    whereClause.append(" = ? ");
-	}
-	whereClause.append(")");
-	return whereClause.toString();
+        StringBuilder whereClause = new StringBuilder();
+        whereClause.append("(");
+        for (int i = 0; i < ids.length; i++) {
+            if (i > 0) {
+                whereClause.append("OR ");
+            }
+            whereClause.append(Downloads._ID);
+            whereClause.append(" = ? ");
+        }
+        whereClause.append(")");
+        return whereClause.toString();
     }
 
     /**
@@ -1023,11 +975,11 @@ public class DownloadManager {
      * {@link #getWhereClauseForIds(long[])}.
      */
     static String[] getWhereArgsForIds(long[] ids) {
-	String[] whereArgs = new String[ids.length];
-	for (int i = 0; i < ids.length; i++) {
-	    whereArgs[i] = Long.toString(ids[i]);
-	}
-	return whereArgs;
+        String[] whereArgs = new String[ids.length];
+        for (int i = 0; i < ids.length; i++) {
+            whereArgs[i] = Long.toString(ids[i]);
+        }
+        return whereArgs;
     }
 
     /**
@@ -1038,238 +990,235 @@ public class DownloadManager {
      * underlying data.
      */
     private static class CursorTranslator extends CursorWrapper {
-	public CursorTranslator(Cursor cursor, Uri baseUri) {
-	    super(cursor);
-	}
+        public CursorTranslator(Cursor cursor, Uri baseUri) {
+            super(cursor);
+        }
 
-	@Override
-	public int getColumnIndex(String columnName) {
-	    return Arrays.asList(COLUMNS).indexOf(columnName);
-	}
+        @Override
+        public int getColumnIndex(String columnName) {
+            return Arrays.asList(COLUMNS).indexOf(columnName);
+        }
 
-	@Override
-	public int getColumnIndexOrThrow(String columnName)
-		throws IllegalArgumentException {
-	    int index = getColumnIndex(columnName);
-	    if (index == -1) {
-		throw new IllegalArgumentException("No such column: "
-			+ columnName);
-	    }
-	    return index;
-	}
+        @Override
+        public int getColumnIndexOrThrow(String columnName) throws IllegalArgumentException {
+            int index = getColumnIndex(columnName);
+            if (index == -1) {
+                throw new IllegalArgumentException("No such column: " + columnName);
+            }
+            return index;
+        }
 
-	@Override
-	public String getColumnName(int columnIndex) {
-	    int numColumns = COLUMNS.length;
-	    if (columnIndex < 0 || columnIndex >= numColumns) {
-		throw new IllegalArgumentException("Invalid column index "
-			+ columnIndex + ", " + numColumns + " columns exist");
-	    }
-	    return COLUMNS[columnIndex];
-	}
+        @Override
+        public String getColumnName(int columnIndex) {
+            int numColumns = COLUMNS.length;
+            if (columnIndex < 0 || columnIndex >= numColumns) {
+                throw new IllegalArgumentException("Invalid column index " + columnIndex + ", " + numColumns
+                        + " columns exist");
+            }
+            return COLUMNS[columnIndex];
+        }
 
-	@Override
-	public String[] getColumnNames() {
-	    String[] returnColumns = new String[COLUMNS.length];
-	    System.arraycopy(COLUMNS, 0, returnColumns, 0, COLUMNS.length);
-	    return returnColumns;
-	}
+        @Override
+        public String[] getColumnNames() {
+            String[] returnColumns = new String[COLUMNS.length];
+            System.arraycopy(COLUMNS, 0, returnColumns, 0, COLUMNS.length);
+            return returnColumns;
+        }
 
-	@Override
-	public int getColumnCount() {
-	    return COLUMNS.length;
-	}
+        @Override
+        public int getColumnCount() {
+            return COLUMNS.length;
+        }
 
-	@Override
-	public byte[] getBlob(int columnIndex) {
-	    throw new UnsupportedOperationException();
-	}
+        @Override
+        public byte[] getBlob(int columnIndex) {
+            throw new UnsupportedOperationException();
+        }
 
-	@Override
-	public double getDouble(int columnIndex) {
-	    return getLong(columnIndex);
-	}
+        @Override
+        public double getDouble(int columnIndex) {
+            return getLong(columnIndex);
+        }
 
-	private boolean isLongColumn(String column) {
-	    return LONG_COLUMNS.contains(column);
-	}
+        private boolean isLongColumn(String column) {
+            return LONG_COLUMNS.contains(column);
+        }
 
-	@Override
-	public float getFloat(int columnIndex) {
-	    return (float) getDouble(columnIndex);
-	}
+        @Override
+        public float getFloat(int columnIndex) {
+            return (float) getDouble(columnIndex);
+        }
 
-	@Override
-	public int getInt(int columnIndex) {
-	    return (int) getLong(columnIndex);
-	}
+        @Override
+        public int getInt(int columnIndex) {
+            return (int) getLong(columnIndex);
+        }
 
-	@Override
-	public long getLong(int columnIndex) {
-	    return translateLong(getColumnName(columnIndex));
-	}
+        @Override
+        public long getLong(int columnIndex) {
+            return translateLong(getColumnName(columnIndex));
+        }
 
-	@Override
-	public short getShort(int columnIndex) {
-	    return (short) getLong(columnIndex);
-	}
+        @Override
+        public short getShort(int columnIndex) {
+            return (short) getLong(columnIndex);
+        }
 
-	@Override
-	public String getString(int columnIndex) {
-	    return translateString(getColumnName(columnIndex));
-	}
+        @Override
+        public String getString(int columnIndex) {
+            return translateString(getColumnName(columnIndex));
+        }
 
-	private String translateString(String column) {
-	    if (isLongColumn(column)) {
-		return Long.toString(translateLong(column));
-	    }
-	    if (column.equals(COLUMN_TITLE)) {
-		return getUnderlyingString(Downloads.COLUMN_TITLE);
-	    }
-	    if (column.equals(COLUMN_DESCRIPTION)) {
-		return getUnderlyingString(Downloads.COLUMN_DESCRIPTION);
-	    }
-	    if (column.equals(COLUMN_URI)) {
-		return getUnderlyingString(Downloads.COLUMN_URI);
-	    }
-	    if (column.equals(COLUMN_MEDIA_TYPE)) {
-		return getUnderlyingString(Downloads.COLUMN_MIME_TYPE);
-	    }
+        private String translateString(String column) {
+            if (isLongColumn(column)) {
+                return Long.toString(translateLong(column));
+            }
+            if (column.equals(COLUMN_TITLE)) {
+                return getUnderlyingString(Downloads.COLUMN_TITLE);
+            }
+            if (column.equals(COLUMN_DESCRIPTION)) {
+                return getUnderlyingString(Downloads.COLUMN_DESCRIPTION);
+            }
+            if (column.equals(COLUMN_URI)) {
+                return getUnderlyingString(Downloads.COLUMN_URI);
+            }
+            if (column.equals(COLUMN_MEDIA_TYPE)) {
+                return getUnderlyingString(Downloads.COLUMN_MIME_TYPE);
+            }
 
-	    assert column.equals(COLUMN_LOCAL_URI);
-	    return getLocalUri();
-	}
+            assert column.equals(COLUMN_LOCAL_URI);
+            return getLocalUri();
+        }
 
-	private String getLocalUri() {
-	    String localPath = getUnderlyingString(Downloads._DATA);
-	    if (localPath == null) {
-		return null;
-	    }
-	    return Uri.fromFile(new File(localPath)).toString();
-	}
+        private String getLocalUri() {
+            String localPath = getUnderlyingString(Downloads._DATA);
+            if (localPath == null) {
+                return null;
+            }
+            return Uri.fromFile(new File(localPath)).toString();
+        }
 
-	private long translateLong(String column) {
-	    if (!isLongColumn(column)) {
-		// mimic behavior of underlying cursor -- most likely, throw
-		// NumberFormatException
-		return Long.valueOf(translateString(column));
-	    }
+        private long translateLong(String column) {
+            if (!isLongColumn(column)) {
+                // mimic behavior of underlying cursor -- most likely, throw
+                // NumberFormatException
+                return Long.valueOf(translateString(column));
+            }
 
-	    if (column.equals(COLUMN_ID)) {
-		return getUnderlyingLong(Downloads._ID);
-	    }
-	    if (column.equals(COLUMN_TOTAL_SIZE_BYTES)) {
-		return getUnderlyingLong(Downloads.COLUMN_TOTAL_BYTES);
-	    }
-	    if (column.equals(COLUMN_STATUS)) {
-		return translateStatus((int) getUnderlyingLong(Downloads.COLUMN_STATUS));
-	    }
-	    if (column.equals(COLUMN_REASON)) {
-		return getReason((int) getUnderlyingLong(Downloads.COLUMN_STATUS));
-	    }
-	    if (column.equals(COLUMN_BYTES_DOWNLOADED_SO_FAR)) {
-		return getUnderlyingLong(Downloads.COLUMN_CURRENT_BYTES);
-	    }
-	    assert column.equals(COLUMN_LAST_MODIFIED_TIMESTAMP);
-	    return getUnderlyingLong(Downloads.COLUMN_LAST_MODIFICATION);
-	}
+            if (column.equals(COLUMN_ID)) {
+                return getUnderlyingLong(Downloads._ID);
+            }
+            if (column.equals(COLUMN_TOTAL_SIZE_BYTES)) {
+                return getUnderlyingLong(Downloads.COLUMN_TOTAL_BYTES);
+            }
+            if (column.equals(COLUMN_STATUS)) {
+                return translateStatus((int) getUnderlyingLong(Downloads.COLUMN_STATUS));
+            }
+            if (column.equals(COLUMN_REASON)) {
+                return getReason((int) getUnderlyingLong(Downloads.COLUMN_STATUS));
+            }
+            if (column.equals(COLUMN_BYTES_DOWNLOADED_SO_FAR)) {
+                return getUnderlyingLong(Downloads.COLUMN_CURRENT_BYTES);
+            }
+            assert column.equals(COLUMN_LAST_MODIFIED_TIMESTAMP);
+            return getUnderlyingLong(Downloads.COLUMN_LAST_MODIFICATION);
+        }
 
-	private long getReason(int status) {
-	    switch (translateStatus(status)) {
-	    case STATUS_FAILED:
-		return getErrorCode(status);
+        private long getReason(int status) {
+            switch (translateStatus(status)) {
+                case STATUS_FAILED:
+                    return getErrorCode(status);
 
-	    case STATUS_PAUSED:
-		return getPausedReason(status);
+                case STATUS_PAUSED:
+                    return getPausedReason(status);
 
-	    default:
-		return 0; // arbitrary value when status is not an error
-	    }
-	}
+                default:
+                    return 0; // arbitrary value when status is not an error
+            }
+        }
 
-	private long getPausedReason(int status) {
-	    switch (status) {
-	    case Downloads.STATUS_WAITING_TO_RETRY:
-		return PAUSED_WAITING_TO_RETRY;
+        private long getPausedReason(int status) {
+            switch (status) {
+                case Downloads.STATUS_WAITING_TO_RETRY:
+                    return PAUSED_WAITING_TO_RETRY;
 
-	    case Downloads.STATUS_WAITING_FOR_NETWORK:
-		return PAUSED_WAITING_FOR_NETWORK;
+                case Downloads.STATUS_WAITING_FOR_NETWORK:
+                    return PAUSED_WAITING_FOR_NETWORK;
 
-	    case Downloads.STATUS_QUEUED_FOR_WIFI:
-		return PAUSED_QUEUED_FOR_WIFI;
+                case Downloads.STATUS_QUEUED_FOR_WIFI:
+                    return PAUSED_QUEUED_FOR_WIFI;
 
-	    default:
-		return PAUSED_UNKNOWN;
-	    }
-	}
+                default:
+                    return PAUSED_UNKNOWN;
+            }
+        }
 
-	private long getErrorCode(int status) {
-	    if ((400 <= status && status < Downloads.MIN_ARTIFICIAL_ERROR_STATUS)
-		    || (500 <= status && status < 600)) {
-		// HTTP status code
-		return status;
-	    }
+        private long getErrorCode(int status) {
+            if ((400 <= status && status < Downloads.MIN_ARTIFICIAL_ERROR_STATUS) || (500 <= status && status < 600)) {
+                // HTTP status code
+                return status;
+            }
 
-	    switch (status) {
-	    case Downloads.STATUS_FILE_ERROR:
-		return ERROR_FILE_ERROR;
+            switch (status) {
+                case Downloads.STATUS_FILE_ERROR:
+                    return ERROR_FILE_ERROR;
 
-	    case Downloads.STATUS_UNHANDLED_HTTP_CODE:
-	    case Downloads.STATUS_UNHANDLED_REDIRECT:
-		return ERROR_UNHANDLED_HTTP_CODE;
+                case Downloads.STATUS_UNHANDLED_HTTP_CODE:
+                case Downloads.STATUS_UNHANDLED_REDIRECT:
+                    return ERROR_UNHANDLED_HTTP_CODE;
 
-	    case Downloads.STATUS_HTTP_DATA_ERROR:
-		return ERROR_HTTP_DATA_ERROR;
+                case Downloads.STATUS_HTTP_DATA_ERROR:
+                    return ERROR_HTTP_DATA_ERROR;
 
-	    case Downloads.STATUS_TOO_MANY_REDIRECTS:
-		return ERROR_TOO_MANY_REDIRECTS;
+                case Downloads.STATUS_TOO_MANY_REDIRECTS:
+                    return ERROR_TOO_MANY_REDIRECTS;
 
-	    case Downloads.STATUS_INSUFFICIENT_SPACE_ERROR:
-		return ERROR_INSUFFICIENT_SPACE;
+                case Downloads.STATUS_INSUFFICIENT_SPACE_ERROR:
+                    return ERROR_INSUFFICIENT_SPACE;
 
-	    case Downloads.STATUS_DEVICE_NOT_FOUND_ERROR:
-		return ERROR_DEVICE_NOT_FOUND;
+                case Downloads.STATUS_DEVICE_NOT_FOUND_ERROR:
+                    return ERROR_DEVICE_NOT_FOUND;
 
-	    case Downloads.STATUS_CANNOT_RESUME:
-		return ERROR_CANNOT_RESUME;
+                case Downloads.STATUS_CANNOT_RESUME:
+                    return ERROR_CANNOT_RESUME;
 
-	    case Downloads.STATUS_FILE_ALREADY_EXISTS_ERROR:
-		return ERROR_FILE_ALREADY_EXISTS;
+                case Downloads.STATUS_FILE_ALREADY_EXISTS_ERROR:
+                    return ERROR_FILE_ALREADY_EXISTS;
 
-	    default:
-		return ERROR_UNKNOWN;
-	    }
-	}
+                default:
+                    return ERROR_UNKNOWN;
+            }
+        }
 
-	private long getUnderlyingLong(String column) {
-	    return super.getLong(super.getColumnIndex(column));
-	}
+        private long getUnderlyingLong(String column) {
+            return super.getLong(super.getColumnIndex(column));
+        }
 
-	private String getUnderlyingString(String column) {
-	    return super.getString(super.getColumnIndex(column));
-	}
+        private String getUnderlyingString(String column) {
+            return super.getString(super.getColumnIndex(column));
+        }
 
-	private int translateStatus(int status) {
-	    switch (status) {
-	    case Downloads.STATUS_PENDING:
-		return STATUS_PENDING;
+        private int translateStatus(int status) {
+            switch (status) {
+                case Downloads.STATUS_PENDING:
+                    return STATUS_PENDING;
 
-	    case Downloads.STATUS_RUNNING:
-		return STATUS_RUNNING;
+                case Downloads.STATUS_RUNNING:
+                    return STATUS_RUNNING;
 
-	    case Downloads.STATUS_PAUSED_BY_APP:
-	    case Downloads.STATUS_WAITING_TO_RETRY:
-	    case Downloads.STATUS_WAITING_FOR_NETWORK:
-	    case Downloads.STATUS_QUEUED_FOR_WIFI:
-		return STATUS_PAUSED;
+                case Downloads.STATUS_PAUSED_BY_APP:
+                case Downloads.STATUS_WAITING_TO_RETRY:
+                case Downloads.STATUS_WAITING_FOR_NETWORK:
+                case Downloads.STATUS_QUEUED_FOR_WIFI:
+                    return STATUS_PAUSED;
 
-	    case Downloads.STATUS_SUCCESS:
-		return STATUS_SUCCESSFUL;
+                case Downloads.STATUS_SUCCESS:
+                    return STATUS_SUCCESSFUL;
 
-	    default:
-		assert Downloads.isStatusError(status);
-		return STATUS_FAILED;
-	    }
-	}
+                default:
+                    assert Downloads.isStatusError(status);
+                    return STATUS_FAILED;
+            }
+        }
     }
 }

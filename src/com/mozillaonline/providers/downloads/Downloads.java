@@ -74,15 +74,13 @@ public final class Downloads implements BaseColumns {
      * 
      * @hide
      */
-    public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY
-	    + "/my_downloads");
+    public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/my_downloads");
 
     /**
      * The content URI for accessing all downloads across all UIDs (requires the
      * ACCESS_ALL_DOWNLOADS permission).
      */
-    public static final Uri ALL_DOWNLOADS_CONTENT_URI = Uri.parse("content://"
-	    + AUTHORITY + "/all_downloads");
+    public static final Uri ALL_DOWNLOADS_CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/all_downloads");
 
     /**
      * Broadcast Action: this is sent by the download manager to the app that
@@ -553,7 +551,7 @@ public final class Downloads implements BaseColumns {
      * @hide
      */
     public static boolean isStatusInformational(int status) {
-	return (status >= 100 && status < 200);
+        return (status >= 100 && status < 200);
     }
 
     /**
@@ -562,7 +560,7 @@ public final class Downloads implements BaseColumns {
      * @hide
      */
     public static boolean isStatusSuccess(int status) {
-	return (status >= 200 && status < 300);
+        return (status >= 200 && status < 300);
     }
 
     /**
@@ -571,7 +569,7 @@ public final class Downloads implements BaseColumns {
      * @hide
      */
     public static boolean isStatusError(int status) {
-	return (status >= 400 && status < 600);
+        return (status >= 400 && status < 600);
     }
 
     /**
@@ -580,7 +578,7 @@ public final class Downloads implements BaseColumns {
      * @hide
      */
     public static boolean isStatusClientError(int status) {
-	return (status >= 400 && status < 500);
+        return (status >= 400 && status < 500);
     }
 
     /**
@@ -589,7 +587,7 @@ public final class Downloads implements BaseColumns {
      * @hide
      */
     public static boolean isStatusServerError(int status) {
-	return (status >= 500 && status < 600);
+        return (status >= 500 && status < 600);
     }
 
     /**
@@ -599,8 +597,7 @@ public final class Downloads implements BaseColumns {
      * @hide
      */
     public static boolean isStatusCompleted(int status) {
-	return (status >= 200 && status < 300)
-		|| (status >= 400 && status < 600);
+        return (status >= 200 && status < 300) || (status >= 400 && status < 600);
     }
 
     /**
@@ -809,20 +806,20 @@ public final class Downloads implements BaseColumns {
      * Constants related to HTTP request headers associated with each download.
      */
     public static class RequestHeaders {
-	public static final String HEADERS_DB_TABLE = "request_headers";
-	public static final String COLUMN_DOWNLOAD_ID = "download_id";
-	public static final String COLUMN_HEADER = "header";
-	public static final String COLUMN_VALUE = "value";
+        public static final String HEADERS_DB_TABLE = "request_headers";
+        public static final String COLUMN_DOWNLOAD_ID = "download_id";
+        public static final String COLUMN_HEADER = "header";
+        public static final String COLUMN_VALUE = "value";
 
-	/**
-	 * Path segment to add to a download URI to retrieve request headers
-	 */
-	public static final String URI_SEGMENT = "headers";
+        /**
+         * Path segment to add to a download URI to retrieve request headers
+         */
+        public static final String URI_SEGMENT = "headers";
 
-	/**
-	 * Prefix for ContentValues keys that contain HTTP header lines, to be
-	 * passed to DownloadProvider.insert().
-	 */
-	public static final String INSERT_KEY_PREFIX = "http_header_";
+        /**
+         * Prefix for ContentValues keys that contain HTTP header lines, to be
+         * passed to DownloadProvider.insert().
+         */
+        public static final String INSERT_KEY_PREFIX = "http_header_";
     }
 }

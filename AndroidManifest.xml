@@ -47,7 +47,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".ActivityDownloadProviderWithUi"
+            android:theme="@style/translucent" >
+        </activity>
         <activity android:name="com.mozillaonline.providers.downloads.ui.DownloadList" >
+        </activity>
+        <activity android:name="com.mozillaonline.providers.downloads.ui.ActivityDownloadList"
+            android:theme="@style/translucent" >
         </activity>
 
         <provider

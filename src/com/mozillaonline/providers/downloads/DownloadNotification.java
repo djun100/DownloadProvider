@@ -31,44 +31,40 @@ import android.widget.RemoteViews;
 import com.mozillaonline.downloadprovider.R;
 
 /**
- * This class handles the updating of the Notification Manager for the
- * cases where there is an ongoing download. Once the download is complete
- * (be it successful or unsuccessful) it is no longer the responsibility
- * of this component to show the download in the notification manager.
- *
+ * This class handles the updating of the Notification Manager for the cases
+ * where there is an ongoing download. Once the download is complete (be it
+ * successful or unsuccessful) it is no longer the responsibility of this
+ * component to show the download in the notification manager.
+ * <br>
+ * <br>
+ * updateNotification()中取消发送通知功能
  */
 class DownloadNotification {
 
     Context mContext;
-    HashMap <String, NotificationItem> mNotifications;
+    HashMap<String, NotificationItem> mNotifications;
     private SystemFacade mSystemFacade;
 
     static final String LOGTAG = "DownloadNotification";
-    static final String WHERE_RUNNING =
-        "(" + Downloads.COLUMN_STATUS + " >= '100') AND (" +
-        Downloads.COLUMN_STATUS + " <= '199') AND (" +
-        Downloads.COLUMN_VISIBILITY + " IS NULL OR " +
-        Downloads.COLUMN_VISIBILITY + " == '" + Downloads.VISIBILITY_VISIBLE + "' OR " +
-        Downloads.COLUMN_VISIBILITY +
-            " == '" + Downloads.VISIBILITY_VISIBLE_NOTIFY_COMPLETED + "')";
-    static final String WHERE_COMPLETED =
-        Downloads.COLUMN_STATUS + " >= '200' AND " +
-        Downloads.COLUMN_VISIBILITY +
-            " == '" + Downloads.VISIBILITY_VISIBLE_NOTIFY_COMPLETED + "'";
-
+    static final String WHERE_RUNNING = "(" + Downloads.COLUMN_STATUS + " >= '100') AND (" + Downloads.COLUMN_STATUS
+            + " <= '199') AND (" + Downloads.COLUMN_VISIBILITY + " IS NULL OR " + Downloads.COLUMN_VISIBILITY + " == '"
+            + Downloads.VISIBILITY_VISIBLE + "' OR " + Downloads.COLUMN_VISIBILITY + " == '"
+            + Downloads.VISIBILITY_VISIBLE_NOTIFY_COMPLETED + "')";
+    static final String WHERE_COMPLETED = Downloads.COLUMN_STATUS + " >= '200' AND " + Downloads.COLUMN_VISIBILITY
+            + " == '" + Downloads.VISIBILITY_VISIBLE_NOTIFY_COMPLETED + "'";
 
     /**
-     * This inner class is used to collate downloads that are owned by
-     * the same application. This is so that only one notification line
-     * item is used for all downloads of a given application.
-     *
+     * This inner class is used to collate downloads that are owned by the same
+     * application. This is so that only one notification line item is used for
+     * all downloads of a given application.
+     * 
      */
     static class NotificationItem {
-        int mId;  // This first db _id for the download for the app
+        int mId; // This first db _id for the download for the app
         long mTotalCurrent = 0;
         long mTotalTotal = 0;
         int mTitleCount = 0;
-        String mPackageName;  // App package name
+        String mPackageName; // App package name
         String mDescription;
         String[] mTitles = new String[2]; // download titles.
         String mPausedText = null;
@@ -90,11 +86,12 @@ class DownloadNotification {
         }
     }
 
-
     /**
      * Constructor
-     * @param ctx The context to use to obtain access to the
-     *            Notification Service
+     * 
+     * @param ctx
+     *            The context to use to obtain access to the Notification
+     *            Service
      */
     DownloadNotification(Context ctx, SystemFacade systemFacade) {
         mContext = ctx;
@@ -106,6 +103,7 @@ class DownloadNotification {
      * Update the notification ui.
      */
     public void updateNotification(Collection<DownloadInfo> downloads) {
+        if(true)return;
         updateActiveNotification(downloads);
         updateCompletedNotification(downloads);
     }
@@ -123,8 +121,7 @@ class DownloadNotification {
             long id = download.mId;
             String title = download.mTitle;
             if (title == null || title.length() == 0) {
-                title = mContext.getResources().getString(
-                        R.string.download_unknown_title);
+                title = mContext.getResources().getString(R.string.download_unknown_title);
             }
 
             NotificationItem item;
@@ -139,10 +136,8 @@ class DownloadNotification {
                 item.addItem(title, progress, max);
                 mNotifications.put(packageName, item);
             }
-            if (download.mStatus == Downloads.STATUS_QUEUED_FOR_WIFI
-                    && item.mPausedText == null) {
-                item.mPausedText = mContext.getResources().getString(
-                        R.string.notification_need_wifi_for_size);
+            if (download.mStatus == Downloads.STATUS_QUEUED_FOR_WIFI && item.mPausedText == null) {
+                item.mPausedText = mContext.getResources().getString(R.string.notification_need_wifi_for_size);
             }
         }
 
@@ -173,8 +168,7 @@ class DownloadNotification {
                             new Object[] { Integer.valueOf(item.mTitleCount - 2) }));
                 }
             } else {
-                expandedView.setTextViewText(R.id.description,
-                        item.mDescription);
+                expandedView.setTextViewText(R.id.description, item.mDescription);
             }
             expandedView.setTextViewText(R.id.title, title);
 
@@ -183,21 +177,16 @@ class DownloadNotification {
                 expandedView.setTextViewText(R.id.paused_text, item.mPausedText);
             } else {
                 expandedView.setViewVisibility(R.id.paused_text, View.GONE);
-                expandedView.setProgressBar(R.id.progress_bar,
-                        (int) item.mTotalTotal,
-                        (int) item.mTotalCurrent,
+                expandedView.setProgressBar(R.id.progress_bar, (int) item.mTotalTotal, (int) item.mTotalCurrent,
                         item.mTotalTotal == -1);
             }
-            expandedView.setTextViewText(R.id.progress_text,
-                    getDownloadingText(item.mTotalTotal, item.mTotalCurrent));
+            expandedView.setTextViewText(R.id.progress_text, getDownloadingText(item.mTotalTotal, item.mTotalCurrent));
             expandedView.setImageViewResource(R.id.appIcon, iconResource);
             n.contentView = expandedView;
 
             Intent intent = new Intent(Constants.ACTION_LIST);
-            intent.setClassName(mContext.getPackageName(),
-                    DownloadReceiver.class.getName());
-            intent.setData(
-                    ContentUris.withAppendedId(Downloads.ALL_DOWNLOADS_CONTENT_URI, item.mId));
+            intent.setClassName(mContext.getPackageName(), DownloadReceiver.class.getName());
+            intent.setData(ContentUris.withAppendedId(Downloads.ALL_DOWNLOADS_CONTENT_URI, item.mId));
             intent.putExtra("multiple", item.mTitleCount > 1);
 
             n.contentIntent = PendingIntent.getBroadcast(mContext, 0, intent, 0);
@@ -219,37 +208,30 @@ class DownloadNotification {
             long id = download.mId;
             String title = download.mTitle;
             if (title == null || title.length() == 0) {
-                title = mContext.getResources().getString(
-                        R.string.download_unknown_title);
+                title = mContext.getResources().getString(R.string.download_unknown_title);
             }
-            Uri contentUri =
-                ContentUris.withAppendedId(Downloads.ALL_DOWNLOADS_CONTENT_URI, id);
+            Uri contentUri = ContentUris.withAppendedId(Downloads.ALL_DOWNLOADS_CONTENT_URI, id);
             String caption;
             Intent intent;
             if (Downloads.isStatusError(download.mStatus)) {
-                caption = mContext.getResources()
-                        .getString(R.string.notification_download_failed);
+                caption = mContext.getResources().getString(R.string.notification_download_failed);
                 intent = new Intent(Constants.ACTION_LIST);
             } else {
-                caption = mContext.getResources()
-                        .getString(R.string.notification_download_complete);
+                caption = mContext.getResources().getString(R.string.notification_download_complete);
                 if (download.mDestination == Downloads.DESTINATION_EXTERNAL) {
                     intent = new Intent(Constants.ACTION_OPEN);
                 } else {
                     intent = new Intent(Constants.ACTION_LIST);
                 }
             }
-            intent.setClassName(mContext.getPackageName(),
-                    DownloadReceiver.class.getName());
+            intent.setClassName(mContext.getPackageName(), DownloadReceiver.class.getName());
             intent.setData(contentUri);
 
             n.when = download.mLastMod;
-            n.setLatestEventInfo(mContext, title, caption,
-                    PendingIntent.getBroadcast(mContext, 0, intent, 0));
+            n.setLatestEventInfo(mContext, title, caption, PendingIntent.getBroadcast(mContext, 0, intent, 0));
 
             intent = new Intent(Constants.ACTION_HIDE);
-            intent.setClassName(mContext.getPackageName(),
-                    DownloadReceiver.class.getName());
+            intent.setClassName(mContext.getPackageName(), DownloadReceiver.class.getName());
             intent.setData(contentUri);
             n.deleteIntent = PendingIntent.getBroadcast(mContext, 0, intent, 0);
 
@@ -258,13 +240,11 @@ class DownloadNotification {
     }
 
     private boolean isActiveAndVisible(DownloadInfo download) {
-        return 100 <= download.mStatus && download.mStatus < 200
-                && download.mVisibility != Downloads.VISIBILITY_HIDDEN;
+        return 100 <= download.mStatus && download.mStatus < 200 && download.mVisibility != Downloads.VISIBILITY_HIDDEN;
     }
 
     private boolean isCompleteAndVisible(DownloadInfo download) {
-        return download.mStatus >= 200
-                && download.mVisibility == Downloads.VISIBILITY_VISIBLE_NOTIFY_COMPLETED;
+        return download.mStatus >= 200 && download.mVisibility == Downloads.VISIBILITY_VISIBLE_NOTIFY_COMPLETED;
     }
 
     /*

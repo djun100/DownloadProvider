@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:background="@android:color/white"
     android:orientation="vertical" >
 
     <EditText
@@ -22,6 +23,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Show download list"
+        android:visibility="visible" >
+    </Button>
+    <Button
+        android:id="@+id/btnDownloadSingleFile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Show DownloadSingleFile"
         android:visibility="visible" >
     </Button>
 

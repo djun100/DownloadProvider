@@ -16,12 +16,12 @@
 ** limitations under the License.
 */
 -->
-
-<com.mozillaonline.providers.downloads.ui.DownloadItem xmlns:android="http://schemas.android.com/apk/res/android"
+<com.mozillaonline.providers.downloads.ui.DownloadItemLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:descendantFocusability="blocksDescendants"
     android:gravity="center_vertical"
+    android:background="@android:color/darker_gray"
     android:paddingRight="?android:attr/scrollbarSize" >
 
     <!-- Clicks are handled directly by DownloadItem -->
@@ -93,4 +93,4 @@
         android:paddingLeft="15dp"
         android:textAppearance="?android:attr/textAppearanceSmall" />
 
-</com.mozillaonline.providers.downloads.ui.DownloadItem>
+</com.mozillaonline.providers.downloads.ui.DownloadItemLayout>

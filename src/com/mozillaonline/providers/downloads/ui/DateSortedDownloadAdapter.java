@@ -18,7 +18,7 @@
 package com.mozillaonline.providers.downloads.ui;
 
 import com.mozillaonline.providers.DownloadManager;
-import com.mozillaonline.providers.downloads.ui.DownloadItem.DownloadSelectListener;
+import com.mozillaonline.providers.downloads.ui.DownloadItemLayout.DownloadSelectListener;
 
 import android.content.Context;
 import android.database.Cursor;

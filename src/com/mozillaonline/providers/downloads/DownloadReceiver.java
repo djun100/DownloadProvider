@@ -34,6 +34,7 @@ import android.util.Log;
 
 /**
  * Receives system broadcasts (boot, network connectivity)
+ * handleNotificationBroadcast()中处理通知点击事件
  */
 public class DownloadReceiver extends BroadcastReceiver {
     SystemFacade mSystemFacade = null;
@@ -47,15 +48,13 @@ public class DownloadReceiver extends BroadcastReceiver {
         if (action.equals(Intent.ACTION_BOOT_COMPLETED)) {
             startService(context);
         } else if (action.equals(ConnectivityManager.CONNECTIVITY_ACTION)) {
-            NetworkInfo info = (NetworkInfo)
-                    intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
+            NetworkInfo info = (NetworkInfo) intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
             if (info != null && info.isConnected()) {
                 startService(context);
             }
         } else if (action.equals(Constants.ACTION_RETRY)) {
             startService(context);
-        } else if (action.equals(Constants.ACTION_OPEN)
-                || action.equals(Constants.ACTION_LIST)
+        } else if (action.equals(Constants.ACTION_OPEN) || action.equals(Constants.ACTION_LIST)
                 || action.equals(Constants.ACTION_HIDE)) {
             handleNotificationBroadcast(context, intent);
         }
@@ -101,34 +100,33 @@ public class DownloadReceiver extends BroadcastReceiver {
 
     /**
      * Hide a system notification for a download.
-     * @param uri URI to update the download
-     * @param cursor Cursor for reading the download's fields
+     * 
+     * @param uri
+     *            URI to update the download
+     * @param cursor
+     *            Cursor for reading the download's fields
      */
     private void hideNotification(Context context, Uri uri, Cursor cursor) {
         mSystemFacade.cancelNotification(ContentUris.parseId(uri));
 
         int statusColumn = cursor.getColumnIndexOrThrow(Downloads.COLUMN_STATUS);
         int status = cursor.getInt(statusColumn);
-        int visibilityColumn =
-                cursor.getColumnIndexOrThrow(Downloads.COLUMN_VISIBILITY);
+        int visibilityColumn = cursor.getColumnIndexOrThrow(Downloads.COLUMN_VISIBILITY);
         int visibility = cursor.getInt(visibilityColumn);
-        if (Downloads.isStatusCompleted(status)
-                && visibility == Downloads.VISIBILITY_VISIBLE_NOTIFY_COMPLETED) {
+        if (Downloads.isStatusCompleted(status) && visibility == Downloads.VISIBILITY_VISIBLE_NOTIFY_COMPLETED) {
             ContentValues values = new ContentValues();
-            values.put(Downloads.COLUMN_VISIBILITY,
-                    Downloads.VISIBILITY_VISIBLE);
+            values.put(Downloads.COLUMN_VISIBILITY, Downloads.VISIBILITY_VISIBLE);
             context.getContentResolver().update(uri, values, null, null);
         }
     }
 
     /**
-     * Open the download that cursor is currently pointing to, since it's completed notification
-     * has been clicked.
+     * Open the download that cursor is currently pointing to, since it's
+     * completed notification has been clicked.
      */
     private void openDownload(Context context, Cursor cursor) {
         String filename = cursor.getString(cursor.getColumnIndexOrThrow(Downloads._DATA));
-        String mimetype =
-            cursor.getString(cursor.getColumnIndexOrThrow(Downloads.COLUMN_MIME_TYPE));
+        String mimetype = cursor.getString(cursor.getColumnIndexOrThrow(Downloads.COLUMN_MIME_TYPE));
         Uri path = Uri.parse(filename);
         // If there is no scheme, then it must be a file
         if (path.getScheme() == null) {
@@ -147,20 +145,20 @@ public class DownloadReceiver extends BroadcastReceiver {
 
     /**
      * Notify the owner of a running download that its notification was clicked.
-     * @param intent the broadcast intent sent by the notification manager
-     * @param cursor Cursor for reading the download's fields
+     * 
+     * @param intent
+     *            the broadcast intent sent by the notification manager
+     * @param cursor
+     *            Cursor for reading the download's fields
      */
     private void sendNotificationClickedIntent(Intent intent, Cursor cursor) {
-        String pckg = cursor.getString(
-                cursor.getColumnIndexOrThrow(Downloads.COLUMN_NOTIFICATION_PACKAGE));
+        String pckg = cursor.getString(cursor.getColumnIndexOrThrow(Downloads.COLUMN_NOTIFICATION_PACKAGE));
         if (pckg == null) {
             return;
         }
 
-        String clazz = cursor.getString(
-                cursor.getColumnIndexOrThrow(Downloads.COLUMN_NOTIFICATION_CLASS));
-        boolean isPublicApi =
-                cursor.getInt(cursor.getColumnIndex(Downloads.COLUMN_IS_PUBLIC_API)) != 0;
+        String clazz = cursor.getString(cursor.getColumnIndexOrThrow(Downloads.COLUMN_NOTIFICATION_CLASS));
+        boolean isPublicApi = cursor.getInt(cursor.getColumnIndex(Downloads.COLUMN_IS_PUBLIC_API)) != 0;
 
         Intent appIntent = null;
         if (isPublicApi) {
@@ -176,8 +174,7 @@ public class DownloadReceiver extends BroadcastReceiver {
                 appIntent.setData(Downloads.CONTENT_URI);
             } else {
                 long downloadId = cursor.getLong(cursor.getColumnIndexOrThrow(Downloads._ID));
-                appIntent.setData(
-                        ContentUris.withAppendedId(Downloads.CONTENT_URI, downloadId));
+                appIntent.setData(ContentUris.withAppendedId(Downloads.CONTENT_URI, downloadId));
             }
         }
 
