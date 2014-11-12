@@ -1,6 +1,6 @@
 modify form https://github.com/yxl/DownloadProvider
 可以识别服务器转发的下载链接
-算上周末两天花了我5天时间才勉强倒腾明白，对contentObserver的调用时机暂时没有搞太清楚，该库是由能搜到的断点下载最稳定最好用的库来修改的，没有之一
+算上周末两天花了我5天时间才勉强倒腾明白，该库是由能搜到的断点下载最稳定最好用的库来修改的，没有之一
 觉得好用的，用上的，请star，tks，好辛苦
 
 This project ports the DownloadProvider of Android 2.3.7. It supports Android 2.2 and above. 
