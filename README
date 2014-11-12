@@ -1,5 +1,5 @@
 modify form https://github.com/yxl/DownloadProvider
-
+可以识别服务器转发的下载链接
 This project ports the DownloadProvider of Android 2.3.7. It supports Android 2.2 and above. 
 
 It is standard Eclipse project, which could be open by Eclipse with the Andoird Development Tools.
