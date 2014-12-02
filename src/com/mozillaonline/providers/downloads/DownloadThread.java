@@ -264,6 +264,7 @@ public class DownloadThread extends Thread {
     private void transferData(State state, InnerState innerState, byte[] data, InputStream entityStream)
             throws StopRequest {
         for (;;) {
+            //实际读取的长度，length=inputStream.read(buffer)
             int bytesRead = readFromResponse(state, innerState, data, entityStream);
             if (bytesRead == -1) { // success, end of stream already reached
                 handleEndOfStream(state, innerState);
@@ -276,7 +277,7 @@ public class DownloadThread extends Thread {
             reportProgress(state, innerState);
 
             if (Constants.LOGVV) {
-                Log.v(Constants.TAG, "downloaded " + innerState.mBytesSoFar + " for " + mInfo.mUri);
+//                Log.v(Constants.TAG, "downloaded " + innerState.mBytesSoFar + " for " + mInfo.mUri);
             }
 
             checkPausedOrCanceled(state);
@@ -368,10 +369,12 @@ public class DownloadThread extends Thread {
     }
 
     /**
-     * Report download progress through the database if necessary.
+     * Report download progress through the database if necessary.<br>
+     * 频繁写入数据库会阻塞输入流写入文件效率
      */
     private void reportProgress(State state, InnerState innerState) {
         long now = mSystemFacade.currentTimeMillis();
+        //上次发出更新显示进度时的大小增长>4k && 更新显示进度时间>1s，最快 增长4k 或 每隔1s插入一下数据库更新进度
         if (innerState.mBytesSoFar - innerState.mBytesNotified > Constants.MIN_PROGRESS_STEP
                 && now - innerState.mTimeLastNotification > Constants.MIN_PROGRESS_TIME) {
             ContentValues values = new ContentValues();
@@ -429,9 +432,10 @@ public class DownloadThread extends Thread {
             values.put(Downloads.COLUMN_TOTAL_BYTES, innerState.mBytesSoFar);
         }
         mContext.getContentResolver().update(mInfo.getAllDownloadsUri(), values, null, null);
-
+        
         boolean lengthMismatched = (innerState.mHeaderContentLength != null)
                 && (innerState.mBytesSoFar != Integer.parseInt(innerState.mHeaderContentLength));
+      //reach end of inputStream ,but length not match.
         if (lengthMismatched) {
             if (cannotResume(innerState)) {
                 throw new StopRequest(Downloads.STATUS_CANNOT_RESUME, "mismatched content length");

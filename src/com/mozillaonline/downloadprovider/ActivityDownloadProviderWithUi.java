@@ -33,6 +33,7 @@ import com.mozillaonline.providers.DownloadManager;
 import com.mozillaonline.providers.DownloadManager.Request;
 import com.mozillaonline.providers.downloads.DownloadService;
 import com.mozillaonline.providers.downloads.DownloadService.OnUiUpdateListener;
+import com.mozillaonline.providers.downloads.Downloads;
 
 /**a modify of DownloadProviderActivity.java
  * @author wangxc <br/>
@@ -128,8 +129,8 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
         
         DownloadService.setListener(this);
         
-        if(!hasDownloadRecord(mSizeSortedCursor,URL)){
-            startDownload(URL);
+        if(!hasDownloadRecord(mSizeSortedCursor,URL3)){
+            startDownload(URL3);
            }
     }
 
@@ -137,9 +138,9 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
     protected void onResume() {
         super.onResume();
         if (haveCursors()) {
-
-            mSizeSortedCursor.registerContentObserver(mContentObserver);
-            mSizeSortedCursor.registerDataSetObserver(mDataSetObserver);
+            registerContentObservers();
+/*            mSizeSortedCursor.registerContentObserver(mContentObserver);
+            mSizeSortedCursor.registerDataSetObserver(mDataSetObserver);*/
             refresh();
 
         }
@@ -149,9 +150,9 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
     protected void onPause() {
         super.onPause();
         if (haveCursors()) {
-            
-            mSizeSortedCursor.unregisterContentObserver(mContentObserver);
-            mSizeSortedCursor.unregisterDataSetObserver(mDataSetObserver);
+            getContentResolver().unregisterContentObserver(mContentObserver);  
+/*            mSizeSortedCursor.unregisterContentObserver(mContentObserver);
+            mSizeSortedCursor.unregisterDataSetObserver(mDataSetObserver);*/
             
         }
         //不然会出现unregister错误
@@ -348,8 +349,10 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
                     mDownloadManager.resumeDownload(mDownloadId);
                 }else if(status==DownloadManager.STATUS_SUCCESSFUL){
                     //open
-                    openCurrentDownload(mSizeSortedCursor);
-
+//                    openCurrentDownload(mSizeSortedCursor);
+                    //delete
+                    deleteDownload(mDownloadId);
+                    return false;
                 }else if(status==DownloadManager.STATUS_FAILED){
                     mDownloadManager.restartDownload(mDownloadId);
                 }else if(status==DownloadManager.STATUS_PENDING){
@@ -391,5 +394,47 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
         } catch (ActivityNotFoundException ex) {
             Toast.makeText(this, R.string.download_no_application_title, Toast.LENGTH_LONG).show();
         }
+    }
+    
+    private void registerContentObservers() {  
+        // 通过调用getUriFor 方法获得 system表里的"飞行模式"所在行的Uri  
+        Uri uri = Downloads.ALL_DOWNLOADS_CONTENT_URI;  
+        // 注册内容观察者  
+        // 第二个参数false 为精确匹配  
+        Log.e(TAG, "注册内容观察者");
+        getContentResolver().registerContentObserver(uri, true, mContentObserver);  
+    }  
+    
+    /**
+     * Delete a download from the Download Manager.
+     */
+    private void deleteDownload(long downloadId) {
+        if (moveToDownload(downloadId)) {
+            int status = mSizeSortedCursor.getInt(mStatusColumnId);
+            boolean isComplete = status == DownloadManager.STATUS_SUCCESSFUL || status == DownloadManager.STATUS_FAILED;
+            String localUri = mSizeSortedCursor.getString(mLocalUriColumnId);
+            if (isComplete && localUri != null) {
+                String path = Uri.parse(localUri).getPath();
+                if (path.startsWith(Environment.getExternalStorageDirectory().getPath())) {
+                    mDownloadManager.markRowDeleted(downloadId);
+                    return;
+                }
+            }
+        }
+        mDownloadManager.remove(downloadId);
+    }
+    
+    /**
+     * Move {@link #mDateSortedCursor} to the download with the given ID.
+     * mDateSortedCursor游标移动到指定downloadId处
+     * @return true if the specified download ID was found; false otherwise
+     */
+    private boolean moveToDownload(long downloadId) {
+        for (mSizeSortedCursor.moveToFirst(); !mSizeSortedCursor.isAfterLast(); mSizeSortedCursor.moveToNext()) {
+            if (mSizeSortedCursor.getLong(mIdColumnId) == downloadId) {
+                return true;
+            }
+        }
+        return false;
     }
 }
