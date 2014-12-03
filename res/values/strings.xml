@@ -2,5 +2,7 @@
 <resources>
 
     <string name="app_name">DownloadProvider</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="hello_world">Hello world!</string>
 
 </resources>

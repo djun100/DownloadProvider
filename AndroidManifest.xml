@@ -41,20 +41,15 @@
         <activity
             android:name=".DownloadProviderActivity"
             android:label="@string/app_name" >
-
         </activity>
         <activity
-            android:name=".ActivityDownloadProviderWithUi"
+            android:name=".ActivityUpdateApp"
             android:theme="@style/translucent" >
-                        <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
         <activity android:name="com.mozillaonline.providers.downloads.ui.DownloadList" >
         </activity>
-        <activity android:name="com.mozillaonline.providers.downloads.ui.ActivityDownloadList"
+        <activity
+            android:name="com.mozillaonline.providers.downloads.ui.ActivityDownloadList"
             android:theme="@style/translucent" >
         </activity>
 
@@ -72,6 +67,16 @@
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
         </receiver>
+
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

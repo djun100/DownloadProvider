@@ -1,10 +1,8 @@
 package com.mozillaonline.downloadprovider;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.util.Set;
-
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
@@ -19,7 +17,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.text.format.Formatter;
-import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -29,17 +27,24 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.k.File.UtilFile;
+import com.k.application.Log;
 import com.mozillaonline.providers.DownloadManager;
 import com.mozillaonline.providers.DownloadManager.Request;
 import com.mozillaonline.providers.downloads.DownloadService;
 import com.mozillaonline.providers.downloads.DownloadService.OnUiUpdateListener;
 import com.mozillaonline.providers.downloads.Downloads;
 
-/**a modify of DownloadProviderActivity.java
+/**
+ * a modify of DownloadProviderActivity.java
+ * 
  * @author wangxc <br/>
  */
-public class ActivityDownloadProviderWithUi extends Activity implements OnClickListener, OnUiUpdateListener{
-    private static final String TAG = ActivityDownloadProviderWithUi.class.getName();
+public class ActivityUpdateApp extends Activity implements OnClickListener, OnUiUpdateListener {
+    private static final String TAG = ActivityUpdateApp.class.getName();
+    public static final String PATHDIR = "pathDir";
+    public static final String URL = "url";
+    public static final String NAME = "name";
 
     private BroadcastReceiver mReceiver;
     // ui old declare
@@ -59,12 +64,8 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
 
     DownloadManager mDownloadManager;
 
-    private static final String URL = "http://www.chinaums.com/static/ums2013/chinaums/app/download/qmf.apk";
-    private static final String URL2 = "http://down.mumayi.com/41052/mbaidu";
-    private static final String URL3 = "http://down.apk.hiapk.com/down?aid=1832508&em=13";
     // func declare
     private Cursor mSizeSortedCursor;
-    private Cursor mDateSortedCursor;
     private MyContentObserver mContentObserver = new MyContentObserver();
     private MyDataSetObserver mDataSetObserver = new MyDataSetObserver();
 
@@ -78,18 +79,21 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
     private int mIdColumnId;
     private int mUriColumnId;
     private long mDownloadId;
-    private int mPositionCursor;//当前游标位置
+    private int mPositionCursor;// 当前游标位置
     private int mLocalUriColumnId;
     private int status;
-    private DateFormat mDateFormat;
-    private DateFormat mTimeFormat;
+
+    private String mPathLocal;
+    private String pathDir;
+    private String name;
+    private String url;
 
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.download_dialog);
-
+        getData();
         mDownloadManager = new DownloadManager(getContentResolver(), getPackageName());
         buildComponents();
         startDownloadService();
@@ -105,7 +109,6 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
         registerReceiver(mReceiver, new IntentFilter(DownloadManager.ACTION_NOTIFICATION_CLICKED));
 
         DownloadManager.Query baseQuery = new DownloadManager.Query().setOnlyIncludeVisibleInDownloadsUi(true);
-        mDateSortedCursor = mDownloadManager.query(baseQuery);
         mSizeSortedCursor = mDownloadManager.query(baseQuery.orderBy(DownloadManager.COLUMN_TOTAL_SIZE_BYTES,
                 DownloadManager.Query.ORDER_DESCENDING));
 
@@ -117,30 +120,37 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
             mStatusColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS);
             mReasonColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON);
             mTotalBytesColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES);
-            mCurrentBytesColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR);
+            mCurrentBytesColumnId = mSizeSortedCursor
+                    .getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR);
             mMediaTypeColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_MEDIA_TYPE);
             mDateColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LAST_MODIFIED_TIMESTAMP);
-            mUriColumnId=mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_URI);
+            mUriColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_URI);
             mLocalUriColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI);
-            
-            mDateFormat = DateFormat.getDateInstance(DateFormat.SHORT);
-            mTimeFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
+
         }
-        
+
         DownloadService.setListener(this);
-        
-        if(!hasDownloadRecord(mSizeSortedCursor,URL3)){
-            startDownload(URL3);
-           }
+
+        if (!hasDownloadRecord(mSizeSortedCursor, url)) {
+            startDownload(url);
+        }
+    }
+
+    private void getData() {
+        Intent intent = getIntent();
+        pathDir = intent.getStringExtra(PATHDIR);
+        name = intent.getStringExtra(NAME);
+        url = intent.getStringExtra(URL);
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         if (haveCursors()) {
-            registerContentObservers();
-/*            mSizeSortedCursor.registerContentObserver(mContentObserver);
-            mSizeSortedCursor.registerDataSetObserver(mDataSetObserver);*/
+
+            mSizeSortedCursor.registerContentObserver(mContentObserver);
+            mSizeSortedCursor.registerDataSetObserver(mDataSetObserver);
             refresh();
 
         }
@@ -150,18 +160,20 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
     protected void onPause() {
         super.onPause();
         if (haveCursors()) {
-            getContentResolver().unregisterContentObserver(mContentObserver);  
-/*            mSizeSortedCursor.unregisterContentObserver(mContentObserver);
-            mSizeSortedCursor.unregisterDataSetObserver(mDataSetObserver);*/
-            
+
+            mSizeSortedCursor.unregisterContentObserver(mContentObserver);
+            mSizeSortedCursor.unregisterDataSetObserver(mDataSetObserver);
+
         }
-        //不然会出现unregister错误
-        finish();
+
+        // //不然会出现unregister错误
+        // finish();
     }
 
     /**
      * Requery the database and update the UI.<br>
-     * Register an observer that is called when changes happen to the content backing this cursor. <br>
+     * Register an observer that is called when changes happen to the content
+     * backing this cursor. <br>
      * Typically the data set won't change until requery() is called.
      */
     private void refresh() {
@@ -175,27 +187,15 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
     @Override
     protected void onDestroy() {
         unregisterReceiver(mReceiver);
-        //to do error
-        if (status == DownloadManager.STATUS_RUNNING) {
-            mDownloadManager.pauseDownload(mDownloadId);
-        }
+        /*
+         * Note: do not count on this method being called as a place for saving
+         * data! if (status == DownloadManager.STATUS_RUNNING) {
+         * mDownloadManager.pauseDownload(mDownloadId); }
+         */
         super.onDestroy();
     }
 
     private void buildComponents() {
-        // old
-        /*
-         * mUrlInputEditText = (EditText) findViewById(R.id.url_input_edittext);
-         * mStartDownloadButton = (Button)
-         * findViewById(R.id.start_download_button); mShowDownloadListButton =
-         * (Button) findViewById(R.id.show_download_list_button);
-         * 
-         * mStartDownloadButton.setOnClickListener(this);
-         * mShowDownloadListButton.setOnClickListener(this);
-         * 
-         * mUrlInputEditText.setText(URL3);
-         */
-        // new
         itemsIcon = (ImageView) findViewById(R.id.itemsIcon);
         itemsTitle = (TextView) findViewById(R.id.itemsTitle);
         itemsDesc = (TextView) findViewById(R.id.itemsDesc);
@@ -218,7 +218,7 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
         switch (id) {
             case R.id.start_download_button:
 
-//                    startDownload(URL3);                    
+                // startDownload(URL3);
 
                 break;
             default:
@@ -229,24 +229,33 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
     private void startDownload(String url) {
         Uri srcUri = Uri.parse(url);
         DownloadManager.Request request = new Request(srcUri);
+
+        UtilFile.makeDirsInExternalStorageDirectory(UtilFile.addStartPathSeparator(pathDir));
+        request.setDestinationInExternalPublicDir(pathDir, "/");
+        // UtilFile.makeDirsInExternalStorageDirectory("/Download");
+        // request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,"/");
         //
-        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "/");
-        //
-        request.setDescription("Just for test");
-        mDownloadId=mDownloadManager.enqueue(request);
-        Log.e(TAG, "mDownloadId:"+mDownloadId);
+        request.setDescription("request.setDescription");
+        mDownloadId = mDownloadManager.enqueue(request);
+        Log.e(TAG, "mDownloadId:" + mDownloadId);
+        refresh();
+        moveToDownload(mDownloadId);
+        mPathLocal = mSizeSortedCursor.getString(mLocalUriColumnId);
+        Log.d("mPathLocal:" + mPathLocal);
     }
 
+    /**
+     * 更新下载UI
+     */
     private void doInvalidateUi() {
-        
+
         String title = null;
         long totalBytes = 0;
         long currentBytes = 0;
-        if(mSizeSortedCursor.moveToPosition(mPositionCursor)){          
-            Log.e(TAG, "数据行数：" + mSizeSortedCursor.getCount() 
-                    + "\n" + "游标位置：" + mSizeSortedCursor.getPosition()
-                    + "\n" + "数据列数：" + mSizeSortedCursor.getColumnCount() );
-            
+        if (mSizeSortedCursor.moveToPosition(mPositionCursor)) {
+            Log.e(TAG, "数据行数：" + mSizeSortedCursor.getCount() + "\n" + "游标位置：" + mSizeSortedCursor.getPosition() + "\n"
+                    + "status：" + status + "\n" + "数据列数：" + mSizeSortedCursor.getColumnCount());
+
             title = mSizeSortedCursor.getString(mTitleColumnId);
             totalBytes = mSizeSortedCursor.getLong(mTotalBytesColumnId);
             currentBytes = mSizeSortedCursor.getLong(mCurrentBytesColumnId);
@@ -264,8 +273,12 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
         if (!indeterminate) {
             progressBar.setProgress(progress);
         }
-        if (status == DownloadManager.STATUS_FAILED || status == DownloadManager.STATUS_SUCCESSFUL) {
+        if (status == DownloadManager.STATUS_SUCCESSFUL) {
             progressBar.setVisibility(View.GONE);
+
+        } else if (status == DownloadManager.STATUS_FAILED) {
+            progressBar.setVisibility(View.VISIBLE);
+            Toast.makeText(getApplicationContext(), "下载失败，请退出重试", Toast.LENGTH_LONG).show();
         } else {
             progressBar.setVisibility(View.VISIBLE);
         }
@@ -273,7 +286,10 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
 
         received_progress_number.setText(getSizeText(currentBytes) + "/" + getSizeText(totalBytes));
         received_progress_percent.setText(pencent + "%");
-
+        if (status == DownloadManager.STATUS_SUCCESSFUL) {
+            Log.d("开始安装");
+            openCurrentDownload(mSizeSortedCursor);
+        }
     }
 
     private String getSizeText(long totalBytes) {
@@ -302,11 +318,6 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
         }
     }
 
-    /**
-     * DataSetObserver每调用两次，ContentObserver调用一次
-     * 
-     * @author wangxc <br/>
-     */
     private class MyDataSetObserver extends DataSetObserver {
         @Override
         public void onChanged() {
@@ -317,48 +328,55 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
     }
 
     /**
-     * traversal bundle with string values.
+     * 是否下载过，包括下载完和未下载完
      * 
-     * @param bundle
-     * @return
-     */
-    public static String printBundle(Bundle bundle) {
-        StringBuilder sb = new StringBuilder("");
-        Set<String> keys = bundle.keySet();
-        for (String key : keys) {
-            sb.append(key).append(":").append(bundle.get(key)).append(";");
-        }
-        return sb.toString();
-    }
-    
-    /**是否下载过，包括下载完和未下载完
      * @param cursor
      * @return
      */
-    public boolean hasDownloadRecord(Cursor cursor,String url){
-        for(cursor.moveToFirst();!cursor.isAfterLast();cursor.moveToNext()){
-            String uri=cursor.getString(mUriColumnId);
-            Log.e(TAG, "hasDownloaded compare:"+uri);
+    public boolean hasDownloadRecord(Cursor cursor, String url) {
+        for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
+            String uri = cursor.getString(mUriColumnId);
+            Log.e(TAG, "hasDownloaded compare:" + uri);
             status = mSizeSortedCursor.getInt(mStatusColumnId);
-            if(uri.equals(url)){
-                mDownloadId=cursor.getLong(mIdColumnId);
-                mPositionCursor=cursor.getPosition();
-                Log.e(TAG, "匹配到下载id："+mDownloadId);
-                Log.e(TAG, "mStatusColumnId:"+status);
-                if (status==DownloadManager.STATUS_PAUSED) {
+            if (uri.equals(url)) {
+                mDownloadId = cursor.getLong(mIdColumnId);
+                mPositionCursor = cursor.getPosition();
+                mPathLocal = cursor.getString(mLocalUriColumnId);
+                Log.e(TAG, "匹配到下载id：" + mDownloadId);
+                Log.e(TAG, "mStatusColumnId:" + status);
+                Log.d("mPathLocal:" + mPathLocal);
+                if (status == DownloadManager.STATUS_PAUSED) {
                     mDownloadManager.resumeDownload(mDownloadId);
-                }else if(status==DownloadManager.STATUS_SUCCESSFUL){
-                    //open
-//                    openCurrentDownload(mSizeSortedCursor);
-                    //delete
+                } else if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                    Log.d("删除downloadid row  和文件");
                     deleteDownload(mDownloadId);
+                    mPathLocal = mPathLocal.substring(7);
+                    Log.d("文件名：" + mPathLocal);
+                    File file = new File(mPathLocal);
+                    if (file.exists()) {
+                        Log.d("apk存在，执行删除");
+                        boolean b = file.delete();
+                        if (b) {
+                            Log.d("删除成功");
+                        }
+                    }
+                    // openCurrentDownload(mSizeSortedCursor);
                     return false;
-                }else if(status==DownloadManager.STATUS_FAILED){
+                } else if (status == DownloadManager.STATUS_FAILED) {
+                    Log.d(TAG, "hasDownloadRecord() DownloadManager.STATUS_FAILED");
                     mDownloadManager.restartDownload(mDownloadId);
-                }else if(status==DownloadManager.STATUS_PENDING){
+                } else if (status == DownloadManager.STATUS_PENDING) {
+                    Log.d(TAG, "hasDownloadRecord() DownloadManager.STATUS_PENDING");
                     mDownloadManager.restartDownload(mDownloadId);
-                }else if(status==DownloadManager.STATUS_RUNNING){
+                } else if (status == DownloadManager.STATUS_RUNNING) {
+                    // 状态为什么会是running？？？
+                    Log.d(TAG, "hasDownloadRecord() DownloadManager.STATUS_RUNNING,return true");
+                    Log.d(TAG, "hasDownloadRecord() 状态错误，可能因为异常退出造成，尝试继续下载。。");
+                    // mDownloadManager.fixDataBaseState(mDownloadId);
+                    mDownloadManager.resumeDownload(mDownloadId);
                     return true;
+                } else {
+                    Log.d("hasDownloadRecord() 未知状态");
                 }
                 return true;
             }
@@ -370,6 +388,7 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
     public void onUiUpdate() {
         refresh();
     }
+
     /**
      * Send an Intent to open the download currently pointed to by the given
      * cursor.
@@ -379,8 +398,8 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
         try {
             getContentResolver().openFileDescriptor(localUri, "r").close();
         } catch (FileNotFoundException exc) {
-            Log.d(TAG, "Failed to open download " + cursor.getLong(mIdColumnId), exc);
-            Toast.makeText(this,getString(R.string.dialog_file_missing_body),Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Failed to open download " + cursor.getLong(mIdColumnId) + "  " + exc);
+            Toast.makeText(this, getString(R.string.dialog_file_missing_body), Toast.LENGTH_SHORT).show();
             return;
         } catch (IOException exc) {
             // close() failed, not a problem
@@ -395,16 +414,15 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
             Toast.makeText(this, R.string.download_no_application_title, Toast.LENGTH_LONG).show();
         }
     }
-    
-    private void registerContentObservers() {  
-        // 通过调用getUriFor 方法获得 system表里的"飞行模式"所在行的Uri  
-        Uri uri = Downloads.ALL_DOWNLOADS_CONTENT_URI;  
-        // 注册内容观察者  
-        // 第二个参数false 为精确匹配  
+
+    private void registerContentObservers() {
+        Uri uri = Downloads.ALL_DOWNLOADS_CONTENT_URI;
+        // 注册内容观察者
+        // 第二个参数false 为精确匹配
         Log.e(TAG, "注册内容观察者");
-        getContentResolver().registerContentObserver(uri, true, mContentObserver);  
-    }  
-    
+        getContentResolver().registerContentObserver(uri, true, mContentObserver);
+    }
+
     /**
      * Delete a download from the Download Manager.
      */
@@ -423,10 +441,11 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
         }
         mDownloadManager.remove(downloadId);
     }
-    
+
     /**
      * Move {@link #mDateSortedCursor} to the download with the given ID.
      * mDateSortedCursor游标移动到指定downloadId处
+     * 
      * @return true if the specified download ID was found; false otherwise
      */
     private boolean moveToDownload(long downloadId) {
@@ -437,4 +456,15 @@ public class ActivityDownloadProviderWithUi extends Activity implements OnClickL
         }
         return false;
     }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (status == DownloadManager.STATUS_RUNNING) {
+                mDownloadManager.pauseDownload(mDownloadId);
+            }
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
 }

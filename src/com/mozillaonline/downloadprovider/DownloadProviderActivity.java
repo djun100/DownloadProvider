@@ -96,7 +96,7 @@ public class DownloadProviderActivity extends Activity implements OnClickListene
                 break;
             case R.id.btnDownloadSingleFile:
                 Intent intent = new Intent();
-                intent.setClass(this, ActivityDownloadProviderWithUi.class);
+                intent.setClass(this, ActivityUpdateApp.class);
                 startActivity(intent);
                 break;
             default:

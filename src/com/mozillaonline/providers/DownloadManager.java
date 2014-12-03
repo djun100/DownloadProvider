@@ -37,6 +37,7 @@ import android.os.ParcelFileDescriptor;
 import android.provider.BaseColumns;
 import android.util.Pair;
 
+import com.k.application.Log;
 import com.mozillaonline.providers.downloads.Downloads;
 
 /**
@@ -868,10 +869,12 @@ public class DownloadManager {
      * @hide
      */
     public void pauseDownload(long... ids) {
+        Log.d(TAG, "pauseDownload()");
         Cursor cursor = query(new Query().setFilterById(ids));
         try {
             for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
                 int status = cursor.getInt(cursor.getColumnIndex(COLUMN_STATUS));
+                Log.d(TAG, "pauseDownload() →status:"+status);
                 if (status != STATUS_RUNNING && status != STATUS_PENDING) {
                     throw new IllegalArgumentException("Can only pause a running download: "
                             + cursor.getLong(cursor.getColumnIndex(COLUMN_ID)));
@@ -896,13 +899,16 @@ public class DownloadManager {
      * @hide
      */
     public void resumeDownload(long... ids) {
+        Log.d("resumeDownload()");
         Cursor cursor = query(new Query().setFilterById(ids));
         try {
             for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
                 int status = cursor.getInt(cursor.getColumnIndex(COLUMN_STATUS));
+                Log.d(TAG, "resumeDownload()→status:"+status);
                 if (status != STATUS_PAUSED) {
-                    throw new IllegalArgumentException("Cann only resume a paused download: "
-                            + cursor.getLong(cursor.getColumnIndex(COLUMN_ID)));
+                    Log.d(TAG, "resumeDownload()→Cann only resume a paused download");
+/*                    throw new IllegalArgumentException("Cann only resume a paused download: "
+                            + cursor.getLong(cursor.getColumnIndex(COLUMN_ID)));*/
                 }
             }
         } finally {
@@ -925,6 +931,7 @@ public class DownloadManager {
      * @hide
      */
     public void restartDownload(long... ids) {
+        Log.d(TAG, "restartDownload()");
         Cursor cursor = query(new Query().setFilterById(ids));
         try {
             for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
