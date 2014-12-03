@@ -148,8 +148,6 @@ public class ActivityUpdateApp extends Activity implements OnClickListener, OnUi
     protected void onResume() {
         super.onResume();
         if (haveCursors()) {
-
-            mSizeSortedCursor.registerContentObserver(mContentObserver);
             mSizeSortedCursor.registerDataSetObserver(mDataSetObserver);
             refresh();
 
@@ -160,8 +158,6 @@ public class ActivityUpdateApp extends Activity implements OnClickListener, OnUi
     protected void onPause() {
         super.onPause();
         if (haveCursors()) {
-
-            mSizeSortedCursor.unregisterContentObserver(mContentObserver);
             mSizeSortedCursor.unregisterDataSetObserver(mDataSetObserver);
 
         }
