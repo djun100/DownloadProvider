@@ -3,6 +3,7 @@ package com.mozillaonline.downloadprovider;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
@@ -15,6 +16,7 @@ import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.FileObserver;
 import android.os.Handler;
 import android.text.format.Formatter;
 import android.view.KeyEvent;
@@ -32,7 +34,6 @@ import com.k.application.Log;
 import com.mozillaonline.providers.DownloadManager;
 import com.mozillaonline.providers.DownloadManager.Request;
 import com.mozillaonline.providers.downloads.DownloadService;
-import com.mozillaonline.providers.downloads.DownloadService.OnUiUpdateListener;
 import com.mozillaonline.providers.downloads.Downloads;
 
 /**
@@ -40,7 +41,7 @@ import com.mozillaonline.providers.downloads.Downloads;
  * 
  * @author wangxc <br/>
  */
-public class ActivityUpdateApp extends Activity implements OnClickListener, OnUiUpdateListener {
+public class ActivityUpdateApp extends Activity implements OnClickListener {
     private static final String TAG = ActivityUpdateApp.class.getName();
     public static final String PATHDIR = "pathDir";
     public static final String URL = "url";
@@ -67,7 +68,6 @@ public class ActivityUpdateApp extends Activity implements OnClickListener, OnUi
     // func declare
     private Cursor mSizeSortedCursor;
     private MyContentObserver mContentObserver = new MyContentObserver();
-    private MyDataSetObserver mDataSetObserver = new MyDataSetObserver();
 
     private int mTitleColumnId;
     private int mStatusColumnId;
@@ -97,7 +97,7 @@ public class ActivityUpdateApp extends Activity implements OnClickListener, OnUi
         mDownloadManager = new DownloadManager(getContentResolver(), getPackageName());
         buildComponents();
         startDownloadService();
-
+        registerContentObservers();
         mReceiver = new BroadcastReceiver() {
 
             @Override
@@ -129,8 +129,6 @@ public class ActivityUpdateApp extends Activity implements OnClickListener, OnUi
 
         }
 
-        DownloadService.setListener(this);
-
         if (!hasDownloadRecord(mSizeSortedCursor, url)) {
             startDownload(url);
         }
@@ -148,22 +146,9 @@ public class ActivityUpdateApp extends Activity implements OnClickListener, OnUi
     protected void onResume() {
         super.onResume();
         if (haveCursors()) {
-            mSizeSortedCursor.registerDataSetObserver(mDataSetObserver);
             refresh();
 
         }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (haveCursors()) {
-            mSizeSortedCursor.unregisterDataSetObserver(mDataSetObserver);
-
-        }
-
-        // //不然会出现unregister错误
-        // finish();
     }
 
     /**
@@ -174,6 +159,7 @@ public class ActivityUpdateApp extends Activity implements OnClickListener, OnUi
      */
     private void refresh() {
         mSizeSortedCursor.requery();
+        doInvalidateUi();
     }
 
     private boolean haveCursors() {
@@ -188,6 +174,7 @@ public class ActivityUpdateApp extends Activity implements OnClickListener, OnUi
          * data! if (status == DownloadManager.STATUS_RUNNING) {
          * mDownloadManager.pauseDownload(mDownloadId); }
          */
+        getContentResolver().unregisterContentObserver(mContentObserver);
         super.onDestroy();
     }
 
@@ -310,16 +297,9 @@ public class ActivityUpdateApp extends Activity implements OnClickListener, OnUi
 
         @Override
         public void onChange(boolean selfChange) {
-            Log.e(TAG, "ContentObserver onChange()");
-        }
-    }
-
-    private class MyDataSetObserver extends DataSetObserver {
-        @Override
-        public void onChanged() {
-            Log.e(TAG, "DataSetObserver------------- onChanged()");
-            // invalidate ui
-            doInvalidateUi();
+            Log.e(TAG, "trigger ContentObserver onChange()");
+            //notificate invalidate ui
+            refresh();
         }
     }
 
@@ -363,7 +343,8 @@ public class ActivityUpdateApp extends Activity implements OnClickListener, OnUi
                     mDownloadManager.restartDownload(mDownloadId);
                 } else if (status == DownloadManager.STATUS_PENDING) {
                     Log.d(TAG, "hasDownloadRecord() DownloadManager.STATUS_PENDING");
-                    mDownloadManager.restartDownload(mDownloadId);
+                    //上次退出时保存链接有效性为未确定状态
+                    mDownloadManager.resumeDownload(mDownloadId);
                 } else if (status == DownloadManager.STATUS_RUNNING) {
                     // 状态为什么会是running？？？
                     Log.d(TAG, "hasDownloadRecord() DownloadManager.STATUS_RUNNING,return true");
@@ -378,11 +359,6 @@ public class ActivityUpdateApp extends Activity implements OnClickListener, OnUi
             }
         }
         return false;
-    }
-
-    @Override
-    public void onUiUpdate() {
-        refresh();
     }
 
     /**
@@ -414,9 +390,9 @@ public class ActivityUpdateApp extends Activity implements OnClickListener, OnUi
     private void registerContentObservers() {
         Uri uri = Downloads.ALL_DOWNLOADS_CONTENT_URI;
         // 注册内容观察者
-        // 第二个参数false 为精确匹配
         Log.e(TAG, "注册内容观察者");
         getContentResolver().registerContentObserver(uri, true, mContentObserver);
+        
     }
 
     /**
@@ -462,5 +438,20 @@ public class ActivityUpdateApp extends Activity implements OnClickListener, OnUi
         }
         return super.onKeyDown(keyCode, event);
     }
+    private class MyFileObserver extends FileObserver{
 
+        public MyFileObserver(String path, int mask) {
+            super(path, mask);
+        }
+
+        @Override
+        public void onEvent(int event, String path) {
+            switch(event){
+                case FileObserver.MODIFY:
+                    Log.e("FileObserver path:"+path+"was modified");
+                    break;
+            }
+        }
+        
+    }
 }

@@ -71,8 +71,7 @@ public class DownloadService extends Service {
     private boolean mPendingUpdate;
 
     SystemFacade mSystemFacade;
-    
-    private static OnUiUpdateListener mOnUiUpdateListener;
+
     /**
      * Receives notifications when the data in the content provider changes
      */
@@ -92,10 +91,6 @@ public class DownloadService extends Service {
             }
             updateFromProvider();
             
-            if(mOnUiUpdateListener!=null){
-                mOnUiUpdateListener.onUiUpdate();                
-            }
-
         }
 
     }
@@ -398,11 +393,5 @@ public class DownloadService extends Service {
         }
         mSystemFacade.cancelNotification(info.mId);
         mDownloads.remove(info.mId);
-    }
-    public static interface OnUiUpdateListener {
-        void onUiUpdate();
-   }
-    public static void setListener(OnUiUpdateListener onUiUpdateListener){
-        mOnUiUpdateListener=onUiUpdateListener;
     }
 }

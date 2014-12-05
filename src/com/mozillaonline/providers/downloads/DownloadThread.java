@@ -378,6 +378,7 @@ public class DownloadThread extends Thread {
         if (innerState.mBytesSoFar - innerState.mBytesNotified > Constants.MIN_PROGRESS_STEP
                 && now - innerState.mTimeLastNotification > Constants.MIN_PROGRESS_TIME) {
             ContentValues values = new ContentValues();
+            //此处暂无法实现直接回调更新UI，不知道是哪个文件的下载线程
             values.put(Downloads.COLUMN_CURRENT_BYTES, innerState.mBytesSoFar);
             mContext.getContentResolver().update(mInfo.getAllDownloadsUri(), values, null, null);
             innerState.mBytesNotified = innerState.mBytesSoFar;

@@ -38,7 +38,7 @@ public class MainActivity extends Activity implements OnClickListener{
         Intent intent=new Intent();
         intent.putExtra(ActivityUpdateApp.PATHDIR,pathDir);
         intent.putExtra("name","");
-        intent.putExtra(ActivityUpdateApp.URL,URL2);
+        intent.putExtra(ActivityUpdateApp.URL,URL3);
         intent.setClass(getApplicationContext(), ActivityUpdateApp.class);
         startActivity(intent);
     }
