@@ -876,8 +876,10 @@ public class DownloadManager {
                 int status = cursor.getInt(cursor.getColumnIndex(COLUMN_STATUS));
                 Log.d(TAG, "pauseDownload() →status:"+status);
                 if (status != STATUS_RUNNING && status != STATUS_PENDING) {
-                    throw new IllegalArgumentException("Can only pause a running download: "
-                            + cursor.getLong(cursor.getColumnIndex(COLUMN_ID)));
+                    Log.e("return; Can only pause a running download: "+ cursor.getLong(cursor.getColumnIndex(COLUMN_ID)));
+                    return;
+/*                    throw new IllegalArgumentException("return; Can only pause a running download: "
+                            + cursor.getLong(cursor.getColumnIndex(COLUMN_ID)));*/
                 }
             }
         } finally {

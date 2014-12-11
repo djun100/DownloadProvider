@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import com.k.application.Log;
+
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -36,7 +38,6 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Process;
-import android.util.Log;
 
 /**
  * Performs the background downloads requested by applications that use the
@@ -87,7 +88,7 @@ public class DownloadService extends Service {
          */
         public void onChange(final boolean selfChange) {
             if (Constants.LOGVV) {
-                Log.v(Constants.TAG, "Service ContentObserver received notification");
+                Log.v( "Service ContentObserver received notification");
             }
             updateFromProvider();
             
@@ -111,7 +112,7 @@ public class DownloadService extends Service {
     public void onCreate() {
         super.onCreate();
         if (Constants.LOGVV) {
-            Log.v(Constants.TAG, "Service onCreate");
+            Log.v( "Service onCreate");
         }
 
         if (mSystemFacade == null) {
@@ -131,7 +132,7 @@ public class DownloadService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         int returnValue = super.onStartCommand(intent, flags, startId);
         if (Constants.LOGVV) {
-            Log.v(Constants.TAG, "Service onStart");
+            Log.v( "Service onStart");
         }
         updateFromProvider();
         return returnValue;
@@ -143,7 +144,7 @@ public class DownloadService extends Service {
     public void onDestroy() {
         getContentResolver().unregisterContentObserver(mObserver);
         if (Constants.LOGVV) {
-            Log.v(Constants.TAG, "Service onDestroy");
+            Log.v( "Service onDestroy");
         }
         super.onDestroy();
     }
@@ -220,6 +221,7 @@ public class DownloadService extends Service {
                             keepService = true;
                         }
                         long next = info.nextAction(now);
+                        Log.e("nextAction wakeUp:"+next/1000.0+"s");
                         if (next == 0) {
                             keepService = true;
                         } else if (next > 0 && next < wakeUp) {
@@ -260,12 +262,12 @@ public class DownloadService extends Service {
         private void scheduleAlarm(long wakeUp) {
             AlarmManager alarms = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
             if (alarms == null) {
-                Log.e(Constants.TAG, "couldn't get alarm manager");
+                Log.e( "couldn't get alarm manager");
                 return;
             }
 
             if (Constants.LOGV) {
-                Log.v(Constants.TAG, "scheduling retry in " + wakeUp + "ms");
+                Log.v( "scheduling retry in " + wakeUp + "ms");
             }
 
             Intent intent = new Intent(Constants.ACTION_RETRY);
@@ -310,7 +312,7 @@ public class DownloadService extends Service {
         while (iterator.hasNext()) {
             String filename = iterator.next();
             if (Constants.LOGV) {
-                Log.v(Constants.TAG, "deleting spurious file " + filename);
+                Log.v( "deleting spurious file " + filename);
             }
             new File(filename).delete();
         }
@@ -325,7 +327,7 @@ public class DownloadService extends Service {
         if (cursor == null) {
             // This isn't good - if we can't do basic queries in our database,
             // nothing's gonna work
-            Log.e(Constants.TAG, "null cursor in trimDatabase");
+            Log.e( "null cursor in trimDatabase");
             return;
         }
         if (cursor.moveToFirst()) {

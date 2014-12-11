@@ -28,8 +28,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.text.format.Formatter;
-import android.util.Log;
 
+import com.k.application.Log;
 import com.mozillaonline.downloadprovider.R;
 
 /**
@@ -79,7 +79,7 @@ public class SizeLimitActivity extends Activity
         Cursor cursor = getContentResolver().query(mCurrentUri, null, null, null, null);
         try {
             if (!cursor.moveToFirst()) {
-                Log.e(Constants.TAG, "Empty cursor for URI " + mCurrentUri);
+                Log.e( "Empty cursor for URI " + mCurrentUri);
                 dialogClosed();
                 return;
             }

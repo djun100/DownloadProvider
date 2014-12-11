@@ -18,6 +18,7 @@ package com.mozillaonline.providers.downloads;
 
 import java.io.File;
 
+import com.k.application.Log;
 import com.mozillaonline.providers.DownloadManager;
 
 import android.content.ActivityNotFoundException;
@@ -30,7 +31,6 @@ import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.util.Log;
 
 /**
  * Receives system broadcasts (boot, network connectivity)
@@ -68,11 +68,11 @@ public class DownloadReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         if (Constants.LOGVV) {
             if (action.equals(Constants.ACTION_OPEN)) {
-                Log.v(Constants.TAG, "Receiver open for " + uri);
+                Log.v( "Receiver open for " + uri);
             } else if (action.equals(Constants.ACTION_LIST)) {
-                Log.v(Constants.TAG, "Receiver list for " + uri);
+                Log.v( "Receiver list for " + uri);
             } else { // ACTION_HIDE
-                Log.v(Constants.TAG, "Receiver hide for " + uri);
+                Log.v( "Receiver hide for " + uri);
             }
         }
 
@@ -139,7 +139,7 @@ public class DownloadReceiver extends BroadcastReceiver {
         try {
             context.startActivity(activityIntent);
         } catch (ActivityNotFoundException ex) {
-            Log.d(Constants.TAG, "no activity for " + mimetype, ex);
+            Log.d( "no activity for " + mimetype, ex);
         }
     }
 

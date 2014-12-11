@@ -1,5 +1,7 @@
 package com.mozillaonline.providers.downloads;
 
+import com.k.application.Log;
+
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
@@ -8,8 +10,9 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 
+/**一个DownloadService对应一个RealSystemFacade
+ */
 class RealSystemFacade implements SystemFacade {
     private Context mContext;
     private NotificationManager mNotificationManager;
@@ -31,14 +34,14 @@ class RealSystemFacade implements SystemFacade {
         ConnectivityManager connectivity = (ConnectivityManager) mContext
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivity == null) {
-            Log.w(Constants.TAG, "couldn't get connectivity manager");
+            Log.w( "couldn't get connectivity manager");
             return null;
         }
 
         NetworkInfo activeInfo = connectivity.getActiveNetworkInfo();
         if (activeInfo == null) {
             if (Constants.LOGVV) {
-                Log.v(Constants.TAG, "network is not available");
+                Log.v( "network is not available");
             }
             return null;
         }
@@ -49,7 +52,7 @@ class RealSystemFacade implements SystemFacade {
         ConnectivityManager connectivity = (ConnectivityManager) mContext
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivity == null) {
-            Log.w(Constants.TAG, "couldn't get connectivity manager");
+            Log.w( "couldn't get connectivity manager");
             return false;
         }
 
@@ -58,7 +61,7 @@ class RealSystemFacade implements SystemFacade {
         final TelephonyManager mgr = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
         boolean isRoaming = isMobile && mgr.isNetworkRoaming();
         if (Constants.LOGVV && isRoaming) {
-            Log.v(Constants.TAG, "network is roaming");
+            Log.v( "network is roaming");
         }
         return isRoaming;
     }

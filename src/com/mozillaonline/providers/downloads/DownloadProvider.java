@@ -24,6 +24,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.k.application.Log;
+
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -43,7 +45,6 @@ import android.os.Binder;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.os.Process;
-import android.util.Log;
 
 /**
  * Allows application to interact with the download manager.
@@ -168,7 +169,7 @@ public final class DownloadProvider extends ContentProvider {
         @Override
         public void onCreate(final SQLiteDatabase db) {
             if (Constants.LOGVV) {
-                Log.v(Constants.TAG, "populating new database");
+                Log.v( "populating new database");
             }
             onUpgrade(db, 0, DB_VERSION);
         }
@@ -190,14 +191,14 @@ public final class DownloadProvider extends ContentProvider {
             } else if (oldV < 100) {
                 // no logic to upgrade from these older version, just recreate
                 // the DB
-                Log.i(Constants.TAG, "Upgrading downloads database from version " + oldV + " to version " + newV
+                Log.i( "Upgrading downloads database from version " + oldV + " to version " + newV
                         + ", which will destroy all old data");
                 oldV = 99;
             } else if (oldV > newV) {
                 // user must have downgraded software; we have no way to know
                 // how to downgrade the
                 // DB, so just recreate it
-                Log.i(Constants.TAG, "Downgrading downloads database from version " + oldV + " (current version is "
+                Log.i( "Downgrading downloads database from version " + oldV + " (current version is "
                         + newV + "), destroying all old data");
                 oldV = 99;
             }
@@ -319,7 +320,7 @@ public final class DownloadProvider extends ContentProvider {
                         + Constants.ETAG + " TEXT, " + Constants.UID + " INTEGER, " + Downloads.COLUMN_OTHER_UID
                         + " INTEGER, " + Downloads.COLUMN_TITLE + " TEXT, " + Downloads.COLUMN_DESCRIPTION + " TEXT); ");
             } catch (SQLException ex) {
-                Log.e(Constants.TAG, "couldn't create table in downloads database");
+                Log.e( "couldn't create table in downloads database");
                 throw ex;
             }
         }
@@ -362,7 +363,7 @@ public final class DownloadProvider extends ContentProvider {
             }
             default: {
                 if (Constants.LOGV) {
-                    Log.v(Constants.TAG, "calling getType on an unknown URI: " + uri);
+                    Log.v( "calling getType on an unknown URI: " + uri);
                 }
                 throw new IllegalArgumentException("Unknown URI: " + uri);
             }
@@ -380,7 +381,7 @@ public final class DownloadProvider extends ContentProvider {
         // note we disallow inserting into ALL_DOWNLOADS
         int match = sURIMatcher.match(uri);
         if (match != MY_DOWNLOADS) {
-            Log.d(Constants.TAG, "calling insert on an unknown/invalid URI: " + uri);
+            Log.d( "calling insert on an unknown/invalid URI: " + uri);
             throw new IllegalArgumentException("Unknown/Invalid URI " + uri);
         }
 
@@ -468,9 +469,9 @@ public final class DownloadProvider extends ContentProvider {
         }
 
         if (Constants.LOGVV) {
-            Log.v(Constants.TAG, "initiating download with UID " + filteredValues.getAsInteger(Constants.UID));
+            Log.v( "initiating download with UID " + filteredValues.getAsInteger(Constants.UID));
             if (filteredValues.containsKey(Downloads.COLUMN_OTHER_UID)) {
-                Log.v(Constants.TAG, "other UID " + filteredValues.getAsInteger(Downloads.COLUMN_OTHER_UID));
+                Log.v( "other UID " + filteredValues.getAsInteger(Downloads.COLUMN_OTHER_UID));
             }
         }
 
@@ -479,7 +480,7 @@ public final class DownloadProvider extends ContentProvider {
 
         long rowID = db.insert(DB_TABLE, null, filteredValues);
         if (rowID == -1) {
-            Log.d(Constants.TAG, "couldn't insert into downloads database");
+            Log.d( "couldn't insert into downloads database");
             return null;
         }
 
@@ -614,7 +615,7 @@ public final class DownloadProvider extends ContentProvider {
         int match = sURIMatcher.match(uri);
         if (match == -1) {
             if (Constants.LOGV) {
-                Log.v(Constants.TAG, "querying unknown URI: " + uri);
+                Log.v( "querying unknown URI: " + uri);
             }
             throw new IllegalArgumentException("Unknown URI: " + uri);
         }
@@ -643,11 +644,11 @@ public final class DownloadProvider extends ContentProvider {
         if (ret != null) {
             ret.setNotificationUri(getContext().getContentResolver(), uri);
             if (Constants.LOGVV) {
-                Log.v(Constants.TAG, "created cursor " + ret + " on behalf of " + Binder.getCallingPid());
+                Log.v( "created cursor " + ret + " on behalf of " + Binder.getCallingPid());
             }
         } else {
             if (Constants.LOGV) {
-                Log.v(Constants.TAG, "query failed in downloads database");
+                Log.v( "query failed in downloads database");
             }
         }
 
@@ -694,7 +695,7 @@ public final class DownloadProvider extends ContentProvider {
         sb.append("sort is ");
         sb.append(sort);
         sb.append(".");
-        Log.v(Constants.TAG, sb.toString());
+        Log.v( sb.toString());
     }
 
     private String getDownloadIdFromUri(final Uri uri) {
@@ -819,7 +820,7 @@ public final class DownloadProvider extends ContentProvider {
                 break;
 
             default:
-                Log.d(Constants.TAG, "updating unknown/invalid URI: " + uri);
+                Log.d( "updating unknown/invalid URI: " + uri);
                 throw new UnsupportedOperationException("Cannot update URI: " + uri);
         }
 
@@ -888,7 +889,7 @@ public final class DownloadProvider extends ContentProvider {
                 break;
 
             default:
-                Log.d(Constants.TAG, "deleting unknown/invalid URI: " + uri);
+                Log.d( "deleting unknown/invalid URI: " + uri);
                 throw new UnsupportedOperationException("Cannot delete URI: " + uri);
         }
         notifyContentChanged(uri, match);
@@ -939,7 +940,7 @@ public final class DownloadProvider extends ContentProvider {
 
         if (ret == null) {
             if (Constants.LOGV) {
-                Log.v(Constants.TAG, "couldn't open file");
+                Log.v( "couldn't open file");
             }
             throw new FileNotFoundException("couldn't open file");
         }
@@ -947,31 +948,31 @@ public final class DownloadProvider extends ContentProvider {
     }
 
     private void logVerboseOpenFileInfo(Uri uri, String mode) {
-        Log.v(Constants.TAG, "openFile uri: " + uri + ", mode: " + mode + ", uid: " + Binder.getCallingUid());
+        Log.v( "openFile uri: " + uri + ", mode: " + mode + ", uid: " + Binder.getCallingUid());
         Cursor cursor = query(Downloads.CONTENT_URI, new String[] { "_id" }, null, null, "_id");
         if (cursor == null) {
-            Log.v(Constants.TAG, "null cursor in openFile");
+            Log.v( "null cursor in openFile");
         } else {
             if (!cursor.moveToFirst()) {
-                Log.v(Constants.TAG, "empty cursor in openFile");
+                Log.v( "empty cursor in openFile");
             } else {
                 do {
-                    Log.v(Constants.TAG, "row " + cursor.getInt(0) + " available");
+                    Log.v( "row " + cursor.getInt(0) + " available");
                 } while (cursor.moveToNext());
             }
             cursor.close();
         }
         cursor = query(uri, new String[] { "_data" }, null, null, null);
         if (cursor == null) {
-            Log.v(Constants.TAG, "null cursor in openFile");
+            Log.v( "null cursor in openFile");
         } else {
             if (!cursor.moveToFirst()) {
-                Log.v(Constants.TAG, "empty cursor in openFile");
+                Log.v( "empty cursor in openFile");
             } else {
                 String filename = cursor.getString(0);
-                Log.v(Constants.TAG, "filename in openFile: " + filename);
+                Log.v( "filename in openFile: " + filename);
                 if (new java.io.File(filename).isFile()) {
-                    Log.v(Constants.TAG, "file exists in openFile");
+                    Log.v( "file exists in openFile");
                 }
             }
             cursor.close();

@@ -24,12 +24,16 @@ import java.io.InputStream;
 import java.io.SyncFailedException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.LinkedList;
 import java.util.Locale;
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 
+import com.k.application.Log;
+
+import de.greenrobot.event.EventBus;
 import android.content.ContentValues;
 import android.content.Context;
 import android.net.http.AndroidHttpClient;
@@ -37,7 +41,6 @@ import android.os.FileUtils;
 import android.os.PowerManager;
 import android.os.Process;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.Pair;
 
 /**
@@ -48,7 +51,6 @@ public class DownloadThread extends Thread {
     private Context mContext;
     private DownloadInfo mInfo;
     private SystemFacade mSystemFacade;
-
     public DownloadThread(Context context, SystemFacade systemFacade, DownloadInfo info) {
         mContext = context;
         mSystemFacade = systemFacade;
@@ -97,6 +99,7 @@ public class DownloadThread extends Thread {
         public int mBytesSoFar = 0;
         public String mHeaderETag;
         public boolean mContinuingDownload = false;
+        /**文件大小 */
         public String mHeaderContentLength;
         public String mHeaderContentDisposition;
         public String mHeaderContentLocation;
@@ -154,14 +157,15 @@ public class DownloadThread extends Thread {
             wakeLock.acquire();
 
             if (Constants.LOGV) {
-                Log.v(Constants.TAG, "initiating download for " + mInfo.mUri);
+                Log.v( "initiating download for " + mInfo.mUri);
             }
 
             client = AndroidHttpClient.newInstance(userAgent(), mContext);
 
             boolean finished = false;
             while (!finished) {
-                Log.i(Constants.TAG, "Initiating request for download " + mInfo.mId);
+                com.k.application.Log.e("注意mId是否为downloadId?");
+                Log.e( "Initiating request for download mInfo.mId:" + mInfo.mId);
                 Log.e(DownloadThread.class.getName(),"HttpGet：state.mRequestUri："+state.mRequestUri);
                 HttpGet request = new HttpGet(state.mRequestUri);
                 try {
@@ -176,18 +180,18 @@ public class DownloadThread extends Thread {
             }
 
             if (Constants.LOGV) {
-                Log.v(Constants.TAG, "download completed for " + mInfo.mUri);
+                Log.v( "download completed for " + mInfo.mUri);
             }
             finalizeDestinationFile(state);
             finalStatus = Downloads.STATUS_SUCCESS;
         } catch (StopRequest error) {
             // remove the cause before printing, in case it contains PII
-            Log.w(Constants.TAG, "Aborting request for download " + mInfo.mId + ": " + error.getMessage());
+            Log.w( "Aborting request for download " + mInfo.mId + ": " + error.getMessage());
             finalStatus = error.mFinalStatus;
             // fall through to finally block
         } catch (Throwable ex) { // sometimes the socket code throws unchecked
             // exceptions
-            Log.w(Constants.TAG, "Exception for id " + mInfo.mId + ": " + ex);
+            Log.w( "Exception for id " + mInfo.mId + ": " + ex);
             finalStatus = Downloads.STATUS_UNKNOWN_ERROR;
             // falls through to the code that reports an error
         } finally {
@@ -226,7 +230,7 @@ public class DownloadThread extends Thread {
         handleExceptionalStatus(state, innerState, response);
 
         if (Constants.LOGV) {
-            Log.v(Constants.TAG, "received response for " + mInfo.mUri);
+            Log.v( "received response for " + mInfo.mUri);
         }
 
         processResponseHeaders(state, innerState, response);
@@ -277,7 +281,7 @@ public class DownloadThread extends Thread {
             reportProgress(state, innerState);
 
             if (Constants.LOGVV) {
-//                Log.v(Constants.TAG, "downloaded " + innerState.mBytesSoFar + " for " + mInfo.mUri);
+//                Log.v( "downloaded " + innerState.mBytesSoFar + " for " + mInfo.mUri);
             }
 
             checkPausedOrCanceled(state);
@@ -315,21 +319,21 @@ public class DownloadThread extends Thread {
             downloadedFileStream = new FileOutputStream(state.mFilename, true);
             downloadedFileStream.getFD().sync();
         } catch (FileNotFoundException ex) {
-            Log.w(Constants.TAG, "file " + state.mFilename + " not found: " + ex);
+            Log.w( "file " + state.mFilename + " not found: " + ex);
         } catch (SyncFailedException ex) {
-            Log.w(Constants.TAG, "file " + state.mFilename + " sync failed: " + ex);
+            Log.w( "file " + state.mFilename + " sync failed: " + ex);
         } catch (IOException ex) {
-            Log.w(Constants.TAG, "IOException trying to sync " + state.mFilename + ": " + ex);
+            Log.w( "IOException trying to sync " + state.mFilename + ": " + ex);
         } catch (RuntimeException ex) {
-            Log.w(Constants.TAG, "exception while syncing file: ", ex);
+            Log.w( "exception while syncing file: ", ex);
         } finally {
             if (downloadedFileStream != null) {
                 try {
                     downloadedFileStream.close();
                 } catch (IOException ex) {
-                    Log.w(Constants.TAG, "IOException while closing synced file: ", ex);
+                    Log.w( "IOException while closing synced file: ", ex);
                 } catch (RuntimeException ex) {
-                    Log.w(Constants.TAG, "exception while closing file: ", ex);
+                    Log.w( "exception while closing file: ", ex);
                 }
             }
         }
@@ -347,7 +351,7 @@ public class DownloadThread extends Thread {
             }
         } catch (IOException ex) {
             if (Constants.LOGV) {
-                Log.v(Constants.TAG, "exception when closing the file after download : " + ex);
+                Log.v( "exception when closing the file after download : " + ex);
             }
             // nothing can really be done if the file can't be closed
         }
@@ -371,14 +375,15 @@ public class DownloadThread extends Thread {
     /**
      * Report download progress through the database if necessary.<br>
      * 频繁写入数据库会阻塞输入流写入文件效率
+     * 若mId为downloadId，此处可以直接回调更新UI，提供文件名、总大小即可根据文件观察者来监视实时大小，三个数据更新界面
      */
     private void reportProgress(State state, InnerState innerState) {
+       
         long now = mSystemFacade.currentTimeMillis();
         //上次发出更新显示进度时的大小增长>4k && 更新显示进度时间>1s，最快 增长4k 或 每隔1s插入一下数据库更新进度
         if (innerState.mBytesSoFar - innerState.mBytesNotified > Constants.MIN_PROGRESS_STEP
                 && now - innerState.mTimeLastNotification > Constants.MIN_PROGRESS_TIME) {
             ContentValues values = new ContentValues();
-            //此处暂无法实现直接回调更新UI，不知道是哪个文件的下载线程
             values.put(Downloads.COLUMN_CURRENT_BYTES, innerState.mBytesSoFar);
             mContext.getContentResolver().update(mInfo.getAllDownloadsUri(), values, null, null);
             innerState.mBytesNotified = innerState.mBytesSoFar;
@@ -495,7 +500,7 @@ public class DownloadThread extends Thread {
 
     private void logNetworkState() {
         if (Constants.LOGX) {
-            Log.i(Constants.TAG, "Net " + (Helpers.isNetworkAvailable(mSystemFacade) ? "Up" : "Down"));
+            Log.i( "Net " + (Helpers.isNetworkAvailable(mSystemFacade) ? "Up" : "Down"));
         }
     }
 
@@ -526,7 +531,8 @@ public class DownloadThread extends Thread {
             throw new StopRequest(Downloads.STATUS_FILE_ERROR, "while opening destination file: " + exc.toString(), exc);
         }
         if (Constants.LOGV) {
-            Log.v(Constants.TAG, "writing " + mInfo.mUri + " to " + state.mFilename);
+            Log.v( "writing " + mInfo.mUri + " to " + state.mFilename);
+            EventBus.getDefault().post(state.mFilename+" "+innerState.mHeaderContentLength);
         }
 
         updateDatabaseFromHeaders(state, innerState);
@@ -587,16 +593,16 @@ public class DownloadThread extends Thread {
         } else {
             // Ignore content-length with transfer-encoding - 2616 4.4 3
             if (Constants.LOGVV) {
-                Log.v(Constants.TAG, "ignoring content-length because of xfer-encoding");
+                Log.v( "ignoring content-length because of xfer-encoding");
             }
         }
         if (Constants.LOGVV) {
-            Log.v(Constants.TAG, "Content-Disposition: " + innerState.mHeaderContentDisposition);
-            Log.v(Constants.TAG, "Content-Length: " + innerState.mHeaderContentLength);
-            Log.v(Constants.TAG, "Content-Location: " + innerState.mHeaderContentLocation);
-            Log.v(Constants.TAG, "Content-Type: " + state.mMimeType);
-            Log.v(Constants.TAG, "ETag: " + innerState.mHeaderETag);
-            Log.v(Constants.TAG, "Transfer-Encoding: " + headerTransferEncoding);
+            Log.v( "Content-Disposition: " + innerState.mHeaderContentDisposition);
+            Log.v( "Content-Length: " + innerState.mHeaderContentLength);
+            Log.v( "Content-Location: " + innerState.mHeaderContentLocation);
+            Log.v( "Content-Type: " + state.mMimeType);
+            Log.v( "ETag: " + innerState.mHeaderETag);
+            Log.v( "Transfer-Encoding: " + headerTransferEncoding);
         }
 
         boolean noSizeInfo = innerState.mHeaderContentLength == null
@@ -648,7 +654,7 @@ public class DownloadThread extends Thread {
      */
     private void handleRedirect(State state, HttpResponse response, int statusCode) throws StopRequest, RetryDownload {
         if (Constants.LOGVV) {
-            Log.v(Constants.TAG, "got HTTP redirect " + statusCode);
+            Log.v( "got HTTP redirect " + statusCode);
         }
         if (state.mRedirectCount >= Constants.MAX_REDIRECTS) {
             throw new StopRequest(Downloads.STATUS_TOO_MANY_REDIRECTS, "too many redirects");
@@ -658,7 +664,7 @@ public class DownloadThread extends Thread {
             return;
         }
         if (Constants.LOGVV) {
-            Log.v(Constants.TAG, "Location :" + header.getValue());
+            Log.v( "Location :" + header.getValue());
         }
 
         String newUri;
@@ -666,7 +672,7 @@ public class DownloadThread extends Thread {
             newUri = new URI(mInfo.mUri).resolve(new URI(header.getValue())).toString();
         } catch (URISyntaxException ex) {
             if (Constants.LOGV) {
-                Log.d(Constants.TAG, "Couldn't resolve redirect URI " + header.getValue() + " for " + mInfo.mUri);
+                Log.d( "Couldn't resolve redirect URI " + header.getValue() + " for " + mInfo.mUri);
             }
             throw new StopRequest(Downloads.STATUS_HTTP_DATA_ERROR, "Couldn't resolve redirect URI");
         }
@@ -686,14 +692,14 @@ public class DownloadThread extends Thread {
      */
     private void handleServiceUnavailable(State state, HttpResponse response) throws StopRequest {
         if (Constants.LOGVV) {
-            Log.v(Constants.TAG, "got HTTP response code 503");
+            Log.v( "got HTTP response code 503");
         }
         state.mCountRetry = true;
         Header header = response.getFirstHeader("Retry-After");
         if (header != null) {
             try {
                 if (Constants.LOGVV) {
-                    Log.v(Constants.TAG, "Retry-After :" + header.getValue());
+                    Log.v( "Retry-After :" + header.getValue());
                 }
                 state.mRetryAfter = Integer.parseInt(header.getValue());
                 if (state.mRetryAfter < 0) {
@@ -737,7 +743,7 @@ public class DownloadThread extends Thread {
             state.mCountRetry = true;
             return Downloads.STATUS_WAITING_TO_RETRY;
         } else {
-            Log.w(Constants.TAG, "reached max retries for " + mInfo.mId);
+            Log.w( "reached max retries for " + mInfo.mId);
             return Downloads.STATUS_HTTP_DATA_ERROR;
         }
     }

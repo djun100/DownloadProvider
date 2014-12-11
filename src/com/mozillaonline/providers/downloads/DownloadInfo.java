@@ -30,9 +30,9 @@ import android.database.CharArrayBuffer;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.Uri;
-import android.util.Log;
 import android.util.Pair;
 
+import com.k.application.Log;
 import com.mozillaonline.providers.DownloadManager;
 
 /**
@@ -451,7 +451,7 @@ public class DownloadInfo {
         }
 
         if (Constants.LOGV) {
-            Log.v(Constants.TAG, "Service spawning thread to handle download " + mId);
+            Log.v( "Service spawning thread to handle download " + mId);
         }
         if (mHasActiveThread) {
             throw new IllegalStateException("Multiple threads on same download");
@@ -478,29 +478,29 @@ public class DownloadInfo {
 
 
     public void logVerboseInfo() {
-        Log.v(Constants.TAG, "Service adding new entry");
-        Log.v(Constants.TAG, "ID      : " + mId);
-        Log.v(Constants.TAG, "URI     : " + ((mUri != null) ? "yes" : "no"));
-        Log.v(Constants.TAG, "NO_INTEG: " + mNoIntegrity);
-        Log.v(Constants.TAG, "HINT    : " + mHint);
-        Log.v(Constants.TAG, "FILENAME: " + mFileName);
-        Log.v(Constants.TAG, "MIMETYPE: " + mMimeType);
-        Log.v(Constants.TAG, "DESTINAT: " + mDestination);
-        Log.v(Constants.TAG, "VISIBILI: " + mVisibility);
-        Log.v(Constants.TAG, "CONTROL : " + mControl);
-        Log.v(Constants.TAG, "STATUS  : " + mStatus);
-        Log.v(Constants.TAG, "FAILED_C: " + mNumFailed);
-        Log.v(Constants.TAG, "RETRY_AF: " + mRetryAfter);
-        Log.v(Constants.TAG, "LAST_MOD: " + mLastMod);
-        Log.v(Constants.TAG, "PACKAGE : " + mPackage);
-        Log.v(Constants.TAG, "CLASS   : " + mClass);
-        Log.v(Constants.TAG, "COOKIES : " + ((mCookies != null) ? "yes" : "no"));
-        Log.v(Constants.TAG, "AGENT   : " + mUserAgent);
-        Log.v(Constants.TAG, "REFERER : " + ((mReferer != null) ? "yes" : "no"));
-        Log.v(Constants.TAG, "TOTAL   : " + mTotalBytes);
-        Log.v(Constants.TAG, "CURRENT : " + mCurrentBytes);
-        Log.v(Constants.TAG, "ETAG    : " + mETag);
-        Log.v(Constants.TAG, "DELETED : " + mDeleted);
+        Log.v( "Service adding new entry");
+        Log.v( "ID      : " + mId);
+        Log.v( "URI     : " + ((mUri != null) ? "yes" : "no"));
+        Log.v( "NO_INTEG: " + mNoIntegrity);
+        Log.v( "HINT    : " + mHint);
+        Log.v( "FILENAME: " + mFileName);
+        Log.v( "MIMETYPE: " + mMimeType);
+        Log.v( "DESTINAT: " + mDestination);
+        Log.v( "VISIBILI: " + mVisibility);
+        Log.v( "CONTROL : " + mControl);
+        Log.v( "STATUS  : " + mStatus);
+        Log.v( "FAILED_C: " + mNumFailed);
+        Log.v( "RETRY_AF: " + mRetryAfter);
+        Log.v( "LAST_MOD: " + mLastMod);
+        Log.v( "PACKAGE : " + mPackage);
+        Log.v( "CLASS   : " + mClass);
+        Log.v( "COOKIES : " + ((mCookies != null) ? "yes" : "no"));
+        Log.v( "AGENT   : " + mUserAgent);
+        Log.v( "REFERER : " + ((mReferer != null) ? "yes" : "no"));
+        Log.v( "TOTAL   : " + mTotalBytes);
+        Log.v( "CURRENT : " + mCurrentBytes);
+        Log.v( "ETAG    : " + mETag);
+        Log.v( "DELETED : " + mDeleted);
     }
 
     /**

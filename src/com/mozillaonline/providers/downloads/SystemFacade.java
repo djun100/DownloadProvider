@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
 
 
+/**一个DownloadService对应一个RealSystemFacade
+ */
 interface SystemFacade {
     /**
      * @see System#currentTimeMillis()

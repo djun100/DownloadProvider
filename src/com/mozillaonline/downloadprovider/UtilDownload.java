@@ -35,15 +35,13 @@ import com.mozillaonline.providers.DownloadManager.Request;
 import com.mozillaonline.providers.downloads.DownloadService;
 import com.mozillaonline.providers.downloads.Downloads;
 
-import de.greenrobot.event.EventBus;
-
 /**
  * a modify of DownloadProviderActivity.java
  * 
  * @author wangxc <br/>
  */
-public class ActivityUpdateApp extends Activity implements OnClickListener{
-    private static final String TAG = ActivityUpdateApp.class.getName();
+public class UtilDownload extends Activity implements OnClickListener{
+    private static final String TAG = UtilDownload.class.getName();
     public static final String PATHDIR = "pathDir";
     public static final String URL = "url";
     public static final String NAME = "name";
@@ -92,6 +90,39 @@ public class ActivityUpdateApp extends Activity implements OnClickListener{
     private boolean flagOpenedInstall=false;
     private boolean flagCanStartFileObserver=false; 
     
+    public UtilDownload() {
+        mDownloadManager = new DownloadManager(getContentResolver(), getPackageName());
+        startDownloadService();
+        registerContentObservers();
+    }
+    public void download(){
+        DownloadManager.Query baseQuery = new DownloadManager.Query().setOnlyIncludeVisibleInDownloadsUi(true);
+        mSizeSortedCursor = mDownloadManager.query(baseQuery.orderBy(DownloadManager.COLUMN_TOTAL_SIZE_BYTES,
+                DownloadManager.Query.ORDER_DESCENDING));
+
+        if (haveCursors()) {
+            startManagingCursor(mSizeSortedCursor);
+
+            mIdColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_ID);
+            mTitleColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TITLE);
+            mStatusColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS);
+            mReasonColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON);
+            mTotalBytesColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES);
+            mCurrentBytesColumnId = mSizeSortedCursor
+                    .getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR);
+            mMediaTypeColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_MEDIA_TYPE);
+            mDateColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LAST_MODIFIED_TIMESTAMP);
+            mUriColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_URI);
+            mLocalUriColumnId = mSizeSortedCursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI);
+
+        }
+
+        if (!hasDownloadRecord(mSizeSortedCursor, url)) {
+            startDownload(url);
+        }//此时mDownloadId确定
+//        DownloadThread.setOnDownLoadInfoReport(this);
+    }
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -137,7 +168,6 @@ public class ActivityUpdateApp extends Activity implements OnClickListener{
             startDownload(url);
         }//此时mDownloadId确定
 //        DownloadThread.setOnDownLoadInfoReport(this);
-        EventBus.getDefault().register(this);
     }
 
     private void getData() {
@@ -165,7 +195,7 @@ public class ActivityUpdateApp extends Activity implements OnClickListener{
      */
     private void refresh() {
         if(flagCanStartFileObserver){
-//            startFileObserver();
+            startFileObserver();
             return;
         }else{
             mSizeSortedCursor.requery();
@@ -183,7 +213,6 @@ public class ActivityUpdateApp extends Activity implements OnClickListener{
         getContentResolver().unregisterContentObserver(mContentObserver);
         if(myFileObserver!=null) myFileObserver.stopWatching();
         super.onDestroy();
-        EventBus.getDefault().unregister(this);
     }
 
     private void buildComponents() {
@@ -254,7 +283,7 @@ public class ActivityUpdateApp extends Activity implements OnClickListener{
         if(mSizeSortedCursor.getString(mLocalUriColumnId) != null&&totalBytes!=0){
             mPathLocal=getPathLocal(mSizeSortedCursor.getString(mLocalUriColumnId));
             mTotalBytes=totalBytes;
-//            flagCanStartFileObserver=true;
+            flagCanStartFileObserver=true;
         }
         if (title.length() == 0) {
             title = getString(R.string.missing_title);
@@ -535,21 +564,6 @@ public class ActivityUpdateApp extends Activity implements OnClickListener{
             Log.e("mPathLocal:"+mPathLocal+" start fileobserver");
             myFileObserver= new MyFileObserver(mPathLocal, FileObserver.MODIFY);
             myFileObserver.startWatching();
-        }
-    }
-    public void onEvent(String event){
-        Log.e("onEvent is called");
-        
-        
-        try {
-            String[] info=event.split(" ");
-            mPathLocal=getPathLocal(info[0]);
-            mTotalBytes=Long.parseLong(info[1]);
-            startFileObserver();
-            EventBus.getDefault().cancelEventDelivery(event);
-            flagCanStartFileObserver=true;
-        } catch (Exception e) {
-            flagCanStartFileObserver=false;
         }
     }
 }
