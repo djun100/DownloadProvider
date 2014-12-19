@@ -1,31 +1,46 @@
 modify form https://github.com/yxl/DownloadProvider
 可以识别服务器转发的下载链接
-这个项目的修改耗费了我一个月的精力，分析了几乎每一个地方，下一步任务为提取出UtilDownload工具。
-该库是由能搜到的断点下载最稳定最好用的库来修改的，没有之一。
 Android平台面向开发者提供了DownloadManager这个服务（service），可以用来完成下载，同时异步地得到下载进度的实时更新提示。
 原生的浏览器，Android Market以及GMail等客户端都使用了该接口。
 该接口也部分的提供了断点续传功能：如果在下载过程中遇到网络错误，如信号中断等，DownloadManager会在网络恢复时尝试断点续传继续下载该文件，
 但不支持由用户发起的暂停然后断点续传。
+使用方法：
+```java
+		...
+        download = new UtilDownload(this);
+        download.download(iCallBack, url, "", pathDir);
+		...
+		
+		    @Override
+    protected void onDestroy() {
+        /********************************************************/
+        download.unRegister();
+        /********************************************************/
+        super.onDestroy();
+    }
 
+    @Override
+    protected void onPause() {
+        /********************************************************/
+        download.pauseDownload();
+        /********************************************************/
+        super.onPause();
+    }
+	
+	...
+	
+	    // callback update ui
+    IReportDownloadProgress iCallBack = new IReportDownloadProgress() {
+
+        @Override
+        public void onUpdate(String pathFile, long byteTotal, long byteCurrent) {
+	...
+```
 This project ports the DownloadProvider of Android 2.3.7. It supports Android 2.2 and above. 
 
-It is standard Eclipse project, which could be open by Eclipse with the Andoird Development Tools.
-
-To illustrate how to use it, I also provide a simple demo.
-
-1. com.mozillaonline.downloadprovider
-A simple demo shows how to schedule a download and list all downloads.
-
-2. com.mozillaonline.providers
-The package of the Android DownloadProvider. I modified the original code to let it work without root permission. 
-I also remove redundant code respective to RM, MediaScanner and system caches.
-
-"com.mozillaonline.providers.DownloadManager", as name suggests, is where you manage the downloads. 
-Most of work could be done with this class. For convenience, I add methods of pausing and resuming a download.
-
-3. Remarks
+Remarks
 com.mozillaonline.providers.downloads.Downloads.AUTHORITY defines the authority of the DownloadProvider. 
 Change the authority both in the code and the AndroidManifest.xml file to avoid conflict with other applicaitons.
 
-4. License
+License
 Apache License, Version 2.0 
