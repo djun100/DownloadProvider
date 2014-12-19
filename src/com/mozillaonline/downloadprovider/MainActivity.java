@@ -1,5 +1,7 @@
 package com.mozillaonline.downloadprovider;
 
+import com.mozillaonline.downloadprovider.UtilDownload.IReportDownloadProgress;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,6 +12,10 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
+/**fix pauseDownload when weakup is counting down
+ * 报超时异常的时候立马重试，weakup time始终设为0
+ * @author wangxc <br/>
+ */
 public class MainActivity extends Activity implements OnClickListener{
     
     private static final String URL = "http://www.chinaums.com/static/ums2013/chinaums/app/download/qmf.apk";
@@ -44,9 +50,14 @@ public class MainActivity extends Activity implements OnClickListener{
             intent.setClass(getApplicationContext(), ActivityUpdateApp.class);
             startActivity(intent);            
         }else if(v==button2){
-            UtilDownload utilDownload=new UtilDownload();
-//            utilDownload.download(url,);
+            Intent intent=new Intent();
+            intent.putExtra(ActivityUpdateApp.PATHDIR,pathDir);
+            intent.putExtra("name","");
+            intent.putExtra(ActivityUpdateApp.URL,URL2);
+            intent.setClass(getApplicationContext(), ActivityUtilDownloadDemo.class);
+            startActivity(intent); 
         }
 
     }
+
 }
