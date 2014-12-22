@@ -32,6 +32,7 @@ import com.k.File.UtilFile;
 import com.k.application.Log;
 import com.mozillaonline.providers.DownloadManager;
 import com.mozillaonline.providers.DownloadManager.Request;
+import com.mozillaonline.providers.downloads.Constants;
 import com.mozillaonline.providers.downloads.DownloadService;
 import com.mozillaonline.providers.downloads.Downloads;
 
@@ -362,7 +363,7 @@ public class UtilDownload {
 
     private class MyFileObserver extends FileObserver {
         private String myPath;
-
+        private long timeLastReport=0;
         public MyFileObserver(String path, int mask) {
             super(path, mask);
             myPath = path;
@@ -376,7 +377,11 @@ public class UtilDownload {
                         
                         @Override
                         public void run() {
-                            doInvalidateUiV2();
+                            long now = System.currentTimeMillis();
+                            if (now - timeLastReport > 100) {
+                                doInvalidateUiV2();
+                                timeLastReport = now;
+                            }
                         }
                     });
                     break;

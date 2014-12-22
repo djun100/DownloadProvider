@@ -4,6 +4,8 @@ Android平台面向开发者提供了DownloadManager这个服务（service），
 原生的浏览器，Android Market以及GMail等客户端都使用了该接口。
 该接口也部分的提供了断点续传功能：如果在下载过程中遇到网络错误，如信号中断等，DownloadManager会在网络恢复时尝试断点续传继续下载该文件，
 但不支持由用户发起的暂停然后断点续传。<br>
+已发现的问题：用fileobserver观察文件大小来更新界面UI会出现严重的跳帧现象，跳帧几十到一百多不等，已限制最快更新为100ms。
+downloadThread中http的412错误可以尝试进行重试，待修改。
 使用方法：
 ```java
 		...
