@@ -81,9 +81,15 @@ public class ActivityUtilDownloadDemo extends Activity {
             receivedProgress.setProgress(progress);
             final int pencent = (int) (byteCurrent * 100 / byteTotal);
 
-            progressNumber.setText(UtilDownload.getSizeText(getApplicationContext(), byteCurrent) 
-                    + "/" + UtilDownload.getSizeText(getApplicationContext(), byteTotal));
+            progressNumber.setText(UtilDownload.getSizeText(getApplicationContext(), byteCurrent) + "/"
+                    + UtilDownload.getSizeText(getApplicationContext(), byteTotal));
             progressPercent.setText(pencent + "%");
+            /********************************************************/
+            if (byteCurrent == byteTotal) {
+                Log.d("开始安装");
+                download.openDownload();
+            }
+            /********************************************************/
         }
 
     };

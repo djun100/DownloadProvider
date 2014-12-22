@@ -96,7 +96,7 @@ public class UtilDownload {
      * @param iCallBack
      * @param url
      * @param name is useless
-     * @param pathDir
+     * @param pathDir eg: Download 则保存在sdCard的Download文件夹下
      */
     public void download(IReportDownloadProgress iCallBack, String url, String name, String pathDir) {
         this.iCallBack = iCallBack;
@@ -368,10 +368,16 @@ public class UtilDownload {
             super(path, mask);
             myPath = path;
         }
-
+        public MyFileObserver(String mPathLocal) {
+            super(mPathLocal);
+            myPath = mPathLocal;
+        }
         @Override
         public void onEvent(int event, String path) {
             switch (event) {
+                //确保文件完全下载完发出更新UI通知，否则可能出现界面更新至9x%停止的状态
+                case FileObserver.CLOSE_WRITE:
+                    Log.w("关闭文件写入");
                 case FileObserver.MODIFY:
                     mContext.runOnUiThread(new Runnable() {
                         
@@ -419,7 +425,7 @@ public class UtilDownload {
     private void startFileObserver() {
         if (mPathLocal != null && myFileObserver == null) {
             Log.e("mPathLocal:" + mPathLocal + " start fileobserver");
-            myFileObserver = new MyFileObserver(mPathLocal, FileObserver.MODIFY);
+            myFileObserver = new MyFileObserver(mPathLocal);
             myFileObserver.startWatching();
         }
     }
@@ -437,6 +443,13 @@ public class UtilDownload {
     public void pauseDownload(){
         Log.e("excute pauseDownload");
         mDownloadManager.pauseDownload(mDownloadId);
+    }
+    /**
+     * 安装
+     */
+    public void openDownload(){
+        Log.e("open Download");
+        openCurrentDownload(mSizeSortedCursor);
     }
     public interface IReportDownloadProgress {
         public void onUpdate(String pathFile, long byteTotal, long byteCurrent);
