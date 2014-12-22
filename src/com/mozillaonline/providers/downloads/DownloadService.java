@@ -221,8 +221,10 @@ public class DownloadService extends Service {
                             keepService = true;
                         }
                         long next = info.nextAction(now);
+                      //下载完成后next=-1
                         Log.e("nextAction wakeUp:"+next/1000.0+"s");
-                        if(next!=0) {
+                        
+                        if(next>0) {
                             next=5;
                             Log.e("发现next不为0，立马置为5ms进行重试");
                         }
