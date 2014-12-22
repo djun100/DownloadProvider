@@ -380,7 +380,7 @@ public class DownloadThread extends Thread {
     private void reportProgress(State state, InnerState innerState) {
        
         long now = mSystemFacade.currentTimeMillis();
-        //上次发出更新显示进度时的大小增长>4k && 更新显示进度时间>1s，最快 增长4k 或 每隔1s插入一下数据库更新进度
+        //上次发出更新显示进度时的大小增长>8k && 更新显示进度时间>1s，最快 增长8k 或 每隔1s插入一下数据库更新进度，原4k
         if (innerState.mBytesSoFar - innerState.mBytesNotified > Constants.MIN_PROGRESS_STEP
                 && now - innerState.mTimeLastNotification > Constants.MIN_PROGRESS_TIME) {
             ContentValues values = new ContentValues();

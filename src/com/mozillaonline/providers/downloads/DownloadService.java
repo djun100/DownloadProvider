@@ -225,8 +225,8 @@ public class DownloadService extends Service {
                         Log.e("nextAction wakeUp:"+next/1000.0+"s");
                         
                         if(next>0) {
-                            next=5;
-                            Log.e("发现next不为0，立马置为5ms进行重试");
+                            next=500;
+                            Log.e("发现next不为0，立马置为500ms进行重试");
                         }
                         if (next == 0) {
                             keepService = true;

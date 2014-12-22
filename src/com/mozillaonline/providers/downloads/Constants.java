@@ -113,7 +113,7 @@ public class Constants {
      * The minimum amount of progress that has to be done before the progress
      * bar gets updated
      */
-    public static final int MIN_PROGRESS_STEP = 4096;
+    public static final int MIN_PROGRESS_STEP = 4096*2;
 
     /**
      * The minimum amount of time that has to elapse before the progress bar
