@@ -13,7 +13,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 /**fix pauseDownload when weakup is counting down
- * 报超时异常的时候立马重试，weakup time始终设为0
+ * 报超时异常的时候立马重试，weakup time始终设为500
  * @author wangxc <br/>
  */
 public class MainActivity extends Activity implements OnClickListener{
@@ -21,6 +21,8 @@ public class MainActivity extends Activity implements OnClickListener{
     private static final String URL = "http://www.chinaums.com/static/ums2013/chinaums/app/download/qmf.apk";
     private static final String URL2 = "http://down.mumayi.com/41052/mbaidu";
     private static final String URL3 = "http://down.apk.hiapk.com/down?aid=1832508&em=13";
+    private static final String URL4 = "http://finance.chinapay.com:80/fmall-console/app/allPeoplePay.apk";//不支持断点
+    private static final String URL5 = "http://app.jifenka.net/client/android/QMF/qmf.apk";
     private static final String pathDir="DownloadProvider";
 //    private static final String pathDir="Download";
     private Button button1;
@@ -46,14 +48,14 @@ public class MainActivity extends Activity implements OnClickListener{
             Intent intent=new Intent();
             intent.putExtra(ActivityUpdateApp.PATHDIR,pathDir);
             intent.putExtra("name","");
-            intent.putExtra(ActivityUpdateApp.URL,URL2);
+            intent.putExtra(ActivityUpdateApp.URL,URL4);
             intent.setClass(getApplicationContext(), ActivityUpdateApp.class);
             startActivity(intent);            
         }else if(v==button2){
             Intent intent=new Intent();
             intent.putExtra(ActivityUpdateApp.PATHDIR,pathDir);
             intent.putExtra("name","");
-            intent.putExtra(ActivityUpdateApp.URL,URL2);
+            intent.putExtra(ActivityUpdateApp.URL,URL4);
             intent.setClass(getApplicationContext(), ActivityUtilDownloadDemo.class);
             startActivity(intent); 
         }

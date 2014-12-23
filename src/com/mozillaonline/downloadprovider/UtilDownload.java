@@ -6,33 +6,21 @@ import java.io.IOException;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.Environment;
 import android.os.FileObserver;
 import android.os.Handler;
 import android.text.format.Formatter;
-import android.view.KeyEvent;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.k.File.UtilFile;
 import com.k.application.Log;
 import com.mozillaonline.providers.DownloadManager;
 import com.mozillaonline.providers.DownloadManager.Request;
-import com.mozillaonline.providers.downloads.Constants;
 import com.mozillaonline.providers.downloads.DownloadService;
 import com.mozillaonline.providers.downloads.Downloads;
 
@@ -385,6 +373,7 @@ public class UtilDownload {
                         public void run() {
                             long now = System.currentTimeMillis();
                             if (now - timeLastReport > 100) {
+                                //该函数更新界面，势必离不开activity UI容器，所以该工具类传Activity上下文进来是必须的
                                 doInvalidateUiV2();
                                 timeLastReport = now;
                             }
